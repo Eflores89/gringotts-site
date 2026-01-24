@@ -173,6 +173,15 @@ body {
   box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
 }
 
+/* Fix date picker overflow */
+.form-group input[type="date"] {
+  position: relative;
+}
+
+.card:has(input[type="date"]) {
+  overflow: visible;
+}
+
 .form-group textarea {
   min-height: 100px;
   resize: vertical;
