@@ -214,17 +214,21 @@ Filters change → API.getSpending(filters) + API.getBudget(filters)
 
 ## PHASE 5: Lambda Backend Functions
 
+### Status: READY TO IMPLEMENT
+
 ### Goal
 Create AWS Lambda functions for Notion integration.
 
-### Functions to Create
-| Function | Endpoint | Purpose |
-|----------|----------|---------|
-| `categories-handler` | `GET /categories` | Fetch distinct categories from Notion |
-| `spending-handler` | `POST /spending` | Create single spending entry |
-| `batch-spending-handler` | `POST /spending/batch` | Create multiple entries with chunking |
-| `get-spending-handler` | `GET /spending` | Query spending with filters |
-| `get-budget-handler` | `GET /budget` | Query budget entries |
+### Files to Create
+| File | Purpose |
+|------|---------|
+| `/lambda/package.json` | Dependencies (@notionhq/client) |
+| `/lambda/index.js` | Main handler with route dispatch |
+| `/lambda/notion-client.js` | Shared Notion client setup |
+| `/lambda/handlers/categories.js` | GET /categories |
+| `/lambda/handlers/spending.js` | POST /spending, GET /spending |
+| `/lambda/handlers/batch-spending.js` | POST /spending/batch |
+| `/lambda/handlers/budget.js` | GET /budget |
 
 ### Environment Variables
 ```
@@ -232,29 +236,85 @@ NOTION_TOKEN=secret_xxx
 SPENDING_DATABASE_ID=29313ec8894181fab424e008128e1b16
 ```
 
-### Key Implementation: Batch Create
-```javascript
-async function batchCreate(transactions, fxRate) {
-  const CHUNK_SIZE = 10;
-  const results = [];
+### API Endpoints (Expected by Frontend)
 
-  for (let i = 0; i < transactions.length; i += CHUNK_SIZE) {
-    const chunk = transactions.slice(i, i + CHUNK_SIZE);
-    const chunkResults = await Promise.all(
-      chunk.map(tx => createWithRetry(tx, fxRate))
-    );
-    results.push(...chunkResults);
-    await sleep(1000); // Rate limiting
-  }
+**1. GET /categories**
+- Query Notion database for distinct category values
+- Response: `{ categories: ["Groceries", "Food", "Transport", ...] }`
 
-  return { created: results.filter(r => r.success).length, results };
+**2. POST /spending**
+- Create single spending page in Notion
+- Request body:
+```json
+{
+  "transaction": "Grocery store",
+  "amount": 45.67,
+  "currency": "EUR",
+  "category": "Groceries",
+  "charge_date": "2025-10-15",
+  "method": "Cash",
+  "note": "Weekly groceries",
+  "euro_money": 45.67
 }
 ```
+- Response: `{ success: true, page_id: "xxx", page_url: "https://notion.so/xxx" }`
 
-### API Gateway Setup
-- REST API in us-east-1
-- CORS enabled for GitHub Pages domain
-- Routes: `/categories`, `/spending`, `/spending/batch`, `/budget`
+**3. POST /spending/batch**
+- Create multiple spending pages with rate limiting
+- Request body:
+```json
+{
+  "transactions": [...],
+  "fx_rate": 21.5
+}
+```
+- Response: `{ created: 50, failed: 0, errors: [], pages: [...] }`
+
+**4. GET /spending?month=10&year=2025&category=Food**
+- Query spending entries with filters (type = "spending")
+- Response: `{ spending: [...], total_count: 215 }`
+
+**5. GET /budget?month=10&year=2025**
+- Query budget entries (type = "budget")
+- Response: `{ budget: [...] }`
+
+### Notion Property Mapping (for page creation)
+```javascript
+const properties = {
+  transaction: { title: [{ text: { content: data.transaction } }] },
+  amount: { number: data.amount },
+  currency: { select: { name: data.currency } },
+  category: { select: { name: data.category } },
+  charge_date: { date: { start: data.charge_date } },
+  money_date: { date: { start: data.charge_date } },
+  method: { select: { name: data.method || 'Cash' } },
+  type: { select: { name: 'spending' } },
+  mm: { number: parseInt(data.charge_date.split('-')[1]) },
+  euro_money: { number: data.euro_money },
+  spend_name: { rich_text: [{ text: { content: data.transaction } }] }
+};
+```
+
+### Batch Processing Strategy
+- Chunk size: 10 items per iteration (Notion API rate limit safe)
+- Concurrency: Sequential within chunks to avoid rate limits
+- Delay: 350ms between API calls (Notion allows ~3 req/sec)
+- Lambda timeout: 5 minutes (300 seconds)
+- Max batch: ~250 items per invocation
+
+### CORS Configuration
+```javascript
+const headers = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS'
+};
+```
+
+### Error Handling
+- Retry failed Notion API calls up to 3 times with exponential backoff
+- Return partial results on batch failures
+- Log errors for debugging
 
 ---
 
