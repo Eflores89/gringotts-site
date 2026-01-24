@@ -80,6 +80,7 @@ body {
   padding: 24px;
   margin-bottom: 20px;
   transition: var(--transition);
+  overflow: hidden;
 }
 
 .card:hover {
@@ -171,6 +172,14 @@ body {
   outline: none;
   border-color: var(--accent-color);
   box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+/* Fix date picker overflow */
+.form-group input[type="date"] {
+  max-width: 100%;
+  box-sizing: border-box;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .form-group textarea {
