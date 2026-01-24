@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gringotts - Spending Tracker</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <!-- Login Section -->
+  <div id="login-section" class="login-container">
+    <div class="login-card">
+      <h1>Gringotts</h1>
+      <p class="subtitle">Spending Tracker</p>
+
+      <div id="login-error" class="alert alert-error hidden"></div>
+
+      <form id="login-form">
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" placeholder="Enter password" required autofocus>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Login</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Dashboard Section (shown after login) -->
+  <div id="dashboard-section" class="hidden">
+    <header class="page-header">
+      <div class="container">
+        <h1>Gringotts Spending Tracker</h1>
+        <div class="nav-links">
+          <a href="index.html" class="active">Dashboard</a>
+          <a href="add-cash.html">Add Cash</a>
+          <a href="clean-spending.html">Clean Spending</a>
+          <a href="review.html">Review</a>
+          <a href="#" id="logout-btn">Logout</a>
+        </div>
+      </div>
+    </header>
+
+    <main class="container">
+      <div class="card">
+        <h2 class="card-title">Welcome to Gringotts</h2>
+        <p class="card-subtitle">Select an option below to manage your spending.</p>
+      </div>
+
+      <div class="nav-cards">
+        <a href="add-cash.html" class="nav-card">
+          <div class="icon">+</div>
+          <h3>Add Cash Spending</h3>
+          <p>Record a cash expense manually with category, amount, and notes.</p>
+        </a>
+
+        <a href="clean-spending.html" class="nav-card">
+          <div class="icon">&#8645;</div>
+          <h3>Clean Spending</h3>
+          <p>Upload Spendee exports, review categories, and bulk import to Notion.</p>
+        </a>
+
+        <a href="review.html" class="nav-card">
+          <div class="icon">&#9776;</div>
+          <h3>Review Spending</h3>
+          <p>Compare budget vs actual spending and view trends over time.</p>
+        </a>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      Auth.initLoginForm();
+      Auth.initLogoutButton();
+    });
+  </script>
+</body>
+</html>

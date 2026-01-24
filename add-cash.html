@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add Cash Spending - Gringotts</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="page-header">
+    <div class="container">
+      <h1>Gringotts Spending Tracker</h1>
+      <div class="nav-links">
+        <a href="index.html">Dashboard</a>
+        <a href="add-cash.html" class="active">Add Cash</a>
+        <a href="clean-spending.html">Clean Spending</a>
+        <a href="review.html">Review</a>
+        <a href="#" id="logout-btn">Logout</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="card">
+      <h2 class="card-title">Add Cash Spending</h2>
+      <p class="card-subtitle">Record a cash expense. The entry will be created in Notion.</p>
+
+      <!-- Alert Messages -->
+      <div id="alert-container" class="hidden"></div>
+
+      <!-- Success Message with Notion Link -->
+      <div id="success-container" class="hidden">
+        <div class="alert alert-success">
+          Spending entry created successfully!
+        </div>
+        <div class="success-link">
+          <a id="notion-link" href="#" target="_blank">View in Notion</a>
+        </div>
+        <button id="add-another-btn" class="btn btn-outline" style="margin-top: 15px;">
+          Add Another Entry
+        </button>
+      </div>
+
+      <!-- Spending Form -->
+      <form id="add-cash-form">
+        <div class="form-group">
+          <label for="category">Category *</label>
+          <select id="category" name="category" required>
+            <option value="" disabled selected>Loading categories...</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="amount">Amount *</label>
+            <input type="number" id="amount" name="amount" step="0.01" min="0.01" placeholder="0.00" required>
+          </div>
+
+          <div class="form-group">
+            <label>Currency *</label>
+            <div class="radio-group">
+              <label>
+                <input type="radio" name="currency" value="EUR" checked>
+                EUR
+              </label>
+              <label>
+                <input type="radio" name="currency" value="MXN">
+                MXN
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="charge_date">Date *</label>
+          <input type="date" id="charge_date" name="charge_date" required>
+        </div>
+
+        <div class="form-group">
+          <label for="note">Description / Notes</label>
+          <textarea id="note" name="note" placeholder="Enter description or notes (optional)"></textarea>
+        </div>
+
+        <button type="submit" id="submit-btn" class="btn btn-primary btn-block">
+          Create Spending Entry
+        </button>
+      </form>
+    </div>
+  </main>
+
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/add-cash.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!Auth.requireAuth()) return;
+      Auth.initLogoutButton();
+      AddCash.init();
+    });
+  </script>
+</body>
+</html>
