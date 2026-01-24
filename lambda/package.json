@@ -1,0 +1,15 @@
+{
+  "name": "gringotts-lambda",
+  "version": "1.0.0",
+  "description": "Lambda functions for Gringotts Spending Tracker",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"No tests configured\" && exit 0"
+  },
+  "dependencies": {
+    "@notionhq/client": "^2.2.14"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
