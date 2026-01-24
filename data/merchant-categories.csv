@@ -1,0 +1,62 @@
+merchant_pattern,category
+# Groceries & Supermarkets
+mercadona,Groceries
+carrefour,Groceries
+lidl,Groceries
+aldi,Groceries
+eroski,Groceries
+dia,Groceries
+alcampo,Groceries
+hipercor,Groceries
+# Food & Restaurants
+uber eats,Food
+glovo,Food
+just eat,Food
+deliveroo,Food
+restaurante,Food
+restaurant,Food
+mcdonalds,Food
+burger king,Food
+starbucks,Food
+# Transport
+uber,Transport
+cabify,Transport
+bolt,Transport
+taxi,Transport
+metro,Transport
+renfe,Transport
+blablacar,Transport
+gasolinera,Transport
+repsol,Transport
+cepsa,Transport
+# Shopping
+amazon,Shopping
+el corte ingles,Shopping
+zara,Shopping
+mango,Shopping
+h&m,Shopping
+primark,Shopping
+ikea,Shopping
+mediamarkt,Shopping
+# Entertainment
+netflix,Entertainment
+spotify,Entertainment
+hbo,Entertainment
+disney+,Entertainment
+cine,Entertainment
+# Utilities
+iberdrola,Utilities
+endesa,Utilities
+naturgy,Utilities
+agua,Utilities
+# Telecom
+vodafone,Telecom
+movistar,Telecom
+orange,Telecom
+# Healthcare
+farmacia,Healthcare
+pharmacy,Healthcare
+# Insurance
+axa,Insurance
+mapfre,Insurance
+allianz,Insurance

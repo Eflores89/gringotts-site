@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Review Spending - Gringotts</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <!-- Chart.js for visualizations -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <header class="page-header">
+    <div class="container">
+      <h1>Gringotts Spending Tracker</h1>
+      <div class="nav-links">
+        <a href="index.html">Dashboard</a>
+        <a href="add-cash.html">Add Cash</a>
+        <a href="clean-spending.html">Clean Spending</a>
+        <a href="review.html" class="active">Review</a>
+        <a href="#" id="logout-btn">Logout</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Filters -->
+    <div class="filters">
+      <div class="form-group">
+        <label for="filter-view">View</label>
+        <select id="filter-view">
+          <option value="budget-vs-actual">Budget vs Actual</option>
+          <option value="spending-trends">Spending Trends</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="filter-month">Month</label>
+        <select id="filter-month">
+          <!-- Populated by JS -->
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="filter-year">Year</label>
+        <select id="filter-year">
+          <!-- Populated by JS -->
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="filter-category">Category</label>
+        <select id="filter-category">
+          <option value="">All Categories</option>
+          <!-- Populated by JS -->
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="filter-fx-rate">EUR/MXN Rate</label>
+        <input type="number" id="filter-fx-rate" step="0.01" min="1" placeholder="21.50">
+      </div>
+      <div class="form-group">
+        <label>&nbsp;</label>
+        <button id="apply-filters" class="btn btn-primary">Apply</button>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loading-state" class="card hidden">
+      <div style="text-align: center; padding: 40px;">
+        <div class="spinner spinner-dark" style="width: 40px; height: 40px;"></div>
+        <p style="margin-top: 15px; color: var(--text-light);">Loading data...</p>
+      </div>
+    </div>
+
+    <!-- Alert Container -->
+    <div id="alert-container" class="hidden"></div>
+
+    <!-- Summary Stats -->
+    <div id="stats-container" class="stats-grid hidden">
+      <div class="stat-card">
+        <div class="label">Total Budget</div>
+        <div class="value" id="stat-budget">--</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Total Spent</div>
+        <div class="value" id="stat-spent">--</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Variance</div>
+        <div class="value" id="stat-variance">--</div>
+        <div class="change" id="stat-variance-pct"></div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Transactions</div>
+        <div class="value" id="stat-transactions">--</div>
+      </div>
+    </div>
+
+    <!-- Budget vs Actual View -->
+    <div id="view-budget-vs-actual" class="hidden">
+      <div class="card">
+        <h2 class="card-title">Budget vs Actual by Category</h2>
+        <div class="table-container">
+          <table id="budget-table">
+            <thead>
+              <tr>
+                <th>Category</th>
+                <th style="text-align: right;">Budget</th>
+                <th style="text-align: right;">Actual</th>
+                <th style="text-align: right;">Variance</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="budget-table-body">
+              <!-- Populated by JS -->
+            </tbody>
+            <tfoot>
+              <tr style="font-weight: bold;">
+                <td>TOTAL</td>
+                <td style="text-align: right;" id="total-budget">--</td>
+                <td style="text-align: right;" id="total-actual">--</td>
+                <td style="text-align: right;" id="total-variance">--</td>
+                <td id="total-status"></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      <!-- Bar Chart -->
+      <div class="chart-container">
+        <h3 style="margin-bottom: 15px;">Budget vs Actual Chart</h3>
+        <canvas id="budget-chart"></canvas>
+      </div>
+    </div>
+
+    <!-- Spending Trends View -->
+    <div id="view-spending-trends" class="hidden">
+      <div class="chart-container">
+        <h3 style="margin-bottom: 15px;">Monthly Spending by Category</h3>
+        <canvas id="trends-chart"></canvas>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">Monthly Breakdown</h2>
+        <div class="table-container">
+          <table id="trends-table">
+            <thead>
+              <tr>
+                <th>Category</th>
+                <th style="text-align: right;">Jan</th>
+                <th style="text-align: right;">Feb</th>
+                <th style="text-align: right;">Mar</th>
+                <th style="text-align: right;">Apr</th>
+                <th style="text-align: right;">May</th>
+                <th style="text-align: right;">Jun</th>
+                <th style="text-align: right;">Jul</th>
+                <th style="text-align: right;">Aug</th>
+                <th style="text-align: right;">Sep</th>
+                <th style="text-align: right;">Oct</th>
+                <th style="text-align: right;">Nov</th>
+                <th style="text-align: right;">Dec</th>
+                <th style="text-align: right;">Total</th>
+              </tr>
+            </thead>
+            <tbody id="trends-table-body">
+              <!-- Populated by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div id="empty-state" class="card hidden">
+      <div style="text-align: center; padding: 40px;">
+        <div style="font-size: 3rem; color: var(--text-muted);">&#128202;</div>
+        <p style="margin-top: 15px; color: var(--text-light);">No data available for the selected filters.</p>
+        <p style="color: var(--text-muted);">Try adjusting the month, year, or category filters.</p>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/review.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!Auth.requireAuth()) return;
+      Auth.initLogoutButton();
+      Review.init();
+    });
+  </script>
+</body>
+</html>

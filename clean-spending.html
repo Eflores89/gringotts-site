@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clean Spending - Gringotts</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <!-- SheetJS for XLSX parsing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+  <header class="page-header">
+    <div class="container">
+      <h1>Gringotts Spending Tracker</h1>
+      <div class="nav-links">
+        <a href="index.html">Dashboard</a>
+        <a href="add-cash.html">Add Cash</a>
+        <a href="clean-spending.html" class="active">Clean Spending</a>
+        <a href="review.html">Review</a>
+        <a href="#" id="logout-btn">Logout</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Step 1: Upload Files -->
+    <div id="step-upload" class="card">
+      <h2 class="card-title">Step 1: Upload Spendee Exports</h2>
+      <p class="card-subtitle">Upload one or more .xlsx files exported from Spendee. Select the month/year for these transactions.</p>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="upload-month">Month</label>
+          <select id="upload-month">
+            <!-- Populated by JS -->
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="upload-year">Year</label>
+          <select id="upload-year">
+            <!-- Populated by JS -->
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="fx-rate">EUR/MXN Rate</label>
+          <input type="number" id="fx-rate" step="0.01" min="1" placeholder="21.50">
+        </div>
+      </div>
+
+      <div id="file-upload" class="file-upload">
+        <input type="file" id="file-input" multiple accept=".xlsx,.xls">
+        <div class="icon">&#128194;</div>
+        <p>Drop Spendee .xlsx files here or click to browse</p>
+        <p class="hint">You can select multiple files at once</p>
+      </div>
+
+      <div id="files-list" class="hidden" style="margin-top: 20px;">
+        <h4>Selected Files:</h4>
+        <ul id="files-list-items"></ul>
+      </div>
+
+      <button id="parse-btn" class="btn btn-primary" style="margin-top: 20px;" disabled>
+        Parse Files
+      </button>
+    </div>
+
+    <!-- Step 2: Review & Categorize -->
+    <div id="step-review" class="card hidden">
+      <h2 class="card-title">Step 2: Review & Categorize</h2>
+      <p class="card-subtitle">
+        Review the parsed transactions. Auto-categorized items are marked with a check.
+        Update categories as needed for uncategorized items.
+      </p>
+
+      <div id="review-alert" class="hidden"></div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="label">Total Transactions</div>
+          <div class="value" id="stat-total">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Auto-Categorized</div>
+          <div class="value" id="stat-categorized">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Needs Review</div>
+          <div class="value" id="stat-uncategorized">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Total Amount (EUR)</div>
+          <div class="value" id="stat-amount">0</div>
+        </div>
+      </div>
+
+      <div class="filters">
+        <div class="form-group">
+          <label>Filter:</label>
+          <select id="filter-status">
+            <option value="all">All Transactions</option>
+            <option value="uncategorized">Needs Review</option>
+            <option value="categorized">Categorized</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>&nbsp;</label>
+          <button id="back-to-upload" class="btn btn-outline">Back to Upload</button>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table id="transactions-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Description</th>
+              <th>Amount</th>
+              <th>Currency</th>
+              <th>Wallet</th>
+              <th>Category</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="transactions-body">
+            <!-- Populated by JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <div style="margin-top: 20px; display: flex; gap: 10px;">
+        <button id="upload-btn" class="btn btn-success">
+          Upload to Notion (<span id="upload-count">0</span> transactions)
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 3: Upload Progress -->
+    <div id="step-progress" class="card hidden">
+      <h2 class="card-title">Step 3: Uploading to Notion</h2>
+      <p class="card-subtitle">Please wait while transactions are uploaded...</p>
+
+      <div class="progress-container">
+        <div class="progress-bar">
+          <div class="fill" id="progress-fill" style="width: 0%"></div>
+        </div>
+        <div class="progress-text">
+          <span id="progress-current">0</span> / <span id="progress-total">0</span>
+          <span id="progress-percent">0%</span>
+        </div>
+      </div>
+
+      <div id="upload-status" style="margin-top: 20px;"></div>
+    </div>
+
+    <!-- Step 4: Complete -->
+    <div id="step-complete" class="card hidden">
+      <h2 class="card-title">Upload Complete!</h2>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="label">Created</div>
+          <div class="value" id="result-created">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Failed</div>
+          <div class="value" id="result-failed">0</div>
+        </div>
+      </div>
+
+      <div id="upload-errors" class="hidden" style="margin-top: 20px;"></div>
+
+      <button id="start-over-btn" class="btn btn-primary" style="margin-top: 20px;">
+        Start Over
+      </button>
+    </div>
+  </main>
+
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/xlsx-parser.js"></script>
+  <script src="js/categorizer.js"></script>
+  <script src="js/clean-spending.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!Auth.requireAuth()) return;
+      Auth.initLogoutButton();
+      CleanSpending.init();
+    });
+  </script>
+</body>
+</html>
