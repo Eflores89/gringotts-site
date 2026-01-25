@@ -146,6 +146,7 @@ body {
 /* Forms */
 .form-group {
   margin-bottom: 20px;
+  overflow: hidden;
 }
 
 .form-group label {
@@ -176,11 +177,13 @@ body {
 
 /* Fix date picker overflow */
 .form-group input[type="date"] {
-  position: relative;
-}
-
-.card:has(input[type="date"]) {
-  overflow: visible;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
 }
 
 .form-group textarea {
