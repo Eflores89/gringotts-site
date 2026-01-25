@@ -16,13 +16,17 @@ async function getCategories(event) {
     let cursor = undefined;
     let hasMore = true;
 
-    // Query the categories database
+    // Query the categories database (only status = "Latest")
     while (hasMore) {
       const response = await withRetry(async () => {
         return notion.databases.query({
           database_id: CATEGORIES_DATABASE_ID,
           start_cursor: cursor,
           page_size: 100,
+          filter: {
+            property: 'status',
+            select: { equals: 'Latest' }
+          },
           sorts: [
             { property: 'spend_name', direction: 'ascending' }
           ]
