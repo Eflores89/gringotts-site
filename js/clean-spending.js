@@ -146,8 +146,8 @@ const CleanSpending = {
         // Parse files
         this.transactions = await XLSXParser.parseFiles(this.files);
 
-        // Auto-categorize
-        this.transactions = Categorizer.categorizeAll(this.transactions);
+        // Auto-categorize (pass categories list for ID lookup)
+        this.transactions = Categorizer.categorizeAll(this.transactions, this.categories);
 
         // Show review step
         this.showReviewStep();
@@ -190,18 +190,18 @@ const CleanSpending = {
     // Filter transactions
     let filtered = this.transactions;
     if (filter === 'categorized') {
-      filtered = this.transactions.filter(t => t.category);
+      filtered = this.transactions.filter(t => t.category_id);
     } else if (filter === 'uncategorized') {
-      filtered = this.transactions.filter(t => !t.category);
+      filtered = this.transactions.filter(t => !t.category_id);
     }
 
     // Render rows
     tbody.innerHTML = filtered.map((tx, i) => {
       const originalIndex = this.transactions.indexOf(tx);
-      const rowClass = tx.category ? 'categorized' : 'uncategorized';
+      const rowClass = tx.category_id ? 'categorized' : 'uncategorized';
       const statusBadge = tx.auto_categorized
         ? '<span class="badge badge-success">Auto</span>'
-        : (tx.category ? '<span class="badge badge-info">Manual</span>' : '<span class="badge badge-warning">Review</span>');
+        : (tx.category_id ? '<span class="badge badge-info">Manual</span>' : '<span class="badge badge-warning">Review</span>');
 
       return `
         <tr class="${rowClass}" data-index="${originalIndex}">
@@ -214,7 +214,7 @@ const CleanSpending = {
             <select class="category-select" data-index="${originalIndex}">
               <option value="">-- Select --</option>
               ${this.categories.map(c =>
-                `<option value="${c}" ${tx.category === c ? 'selected' : ''}>${c}</option>`
+                `<option value="${c.id}" ${tx.category_id === c.id ? 'selected' : ''}>${c.spend_name}</option>`
               ).join('')}
             </select>
           </td>
@@ -227,7 +227,7 @@ const CleanSpending = {
     tbody.querySelectorAll('.category-select').forEach(select => {
       select.addEventListener('change', (e) => {
         const index = parseInt(e.target.dataset.index);
-        this.transactions[index].category = e.target.value || null;
+        this.transactions[index].category_id = e.target.value || null;
         this.transactions[index].auto_categorized = false;
         this.updateStats();
       });
@@ -276,7 +276,7 @@ const CleanSpending = {
 
     uploadBtn.addEventListener('click', async () => {
       // Check for uncategorized transactions
-      const uncategorized = this.transactions.filter(t => !t.category);
+      const uncategorized = this.transactions.filter(t => !t.category_id);
       if (uncategorized.length > 0) {
         const proceed = confirm(
           `${uncategorized.length} transactions are still uncategorized. ` +
@@ -286,7 +286,7 @@ const CleanSpending = {
       }
 
       // Filter to only categorized transactions
-      const toUpload = this.transactions.filter(t => t.category);
+      const toUpload = this.transactions.filter(t => t.category_id);
       if (toUpload.length === 0) {
         Utils.showAlert('review-alert', 'No categorized transactions to upload.', 'warning');
         Utils.show('review-alert');

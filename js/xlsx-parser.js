@@ -109,6 +109,7 @@ const XLSXParser = {
 
       // To be filled by categorizer
       category: null,
+      category_id: null,
       auto_categorized: false,
       matched_rule: null,
 
@@ -159,7 +160,7 @@ const XLSXParser = {
    */
   getStats(transactions, fxRate) {
     const total = transactions.length;
-    const categorized = transactions.filter(t => t.category).length;
+    const categorized = transactions.filter(t => t.category_id).length;
     const uncategorized = total - categorized;
 
     // Calculate total in EUR

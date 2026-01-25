@@ -9,8 +9,9 @@ const notion = new Client({
   auth: process.env.NOTION_TOKEN
 });
 
-// Database ID from environment
+// Database IDs from environment
 const DATABASE_ID = process.env.SPENDING_DATABASE_ID;
+const CATEGORIES_DATABASE_ID = process.env.CATEGORIES_DATABASE_ID;
 
 // CORS headers for API Gateway
 const CORS_HEADERS = {
@@ -103,7 +104,7 @@ function extractPageData(page) {
     transaction: getTitle(props.transaction),
     amount: getNumber(props.amount),
     currency: getSelect(props.currency),
-    category: getSelect(props.category),
+    category: getRelation(props.category),
     charge_date: getDate(props.charge_date),
     money_date: getDate(props.money_date),
     method: getSelect(props.method),
@@ -137,9 +138,15 @@ function getRichText(prop) {
   return prop?.rich_text?.[0]?.text?.content || '';
 }
 
+function getRelation(prop) {
+  // Return first related page ID or null
+  return prop?.relation?.[0]?.id || null;
+}
+
 module.exports = {
   notion,
   DATABASE_ID,
+  CATEGORIES_DATABASE_ID,
   CORS_HEADERS,
   success,
   error,

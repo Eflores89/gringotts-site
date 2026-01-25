@@ -1,42 +1,51 @@
 /**
  * Categories Handler
- * GET /categories - Fetch distinct categories from Notion
+ * GET /categories - Fetch categories from the Categories database
  */
 
-const { notion, DATABASE_ID, success, error, withRetry } = require('../notion-client');
+const { notion, CATEGORIES_DATABASE_ID, success, error, withRetry } = require('../notion-client');
 
 /**
- * Get all unique categories from the spending database
+ * Get all categories from the categories database
  * @param {object} event - API Gateway event
  * @returns {object} Lambda response
  */
 async function getCategories(event) {
   try {
-    const categories = new Set();
+    const categories = [];
     let cursor = undefined;
     let hasMore = true;
 
-    // Query all pages to extract unique categories
+    // Query the categories database
     while (hasMore) {
       const response = await withRetry(async () => {
         return notion.databases.query({
-          database_id: DATABASE_ID,
+          database_id: CATEGORIES_DATABASE_ID,
           start_cursor: cursor,
           page_size: 100,
-          filter: {
-            property: 'category',
-            select: {
-              is_not_empty: true
-            }
-          }
+          sorts: [
+            { property: 'spend_name', direction: 'ascending' }
+          ]
         });
       });
 
-      // Extract categories from results
+      // Extract category data from results
       for (const page of response.results) {
-        const category = page.properties.category?.select?.name;
-        if (category) {
-          categories.add(category);
+        const props = page.properties;
+
+        // Get spend_name from the page
+        const spendName = props.spend_name?.rich_text?.[0]?.text?.content
+          || props.spend_name?.title?.[0]?.text?.content
+          || '';
+
+        if (spendName) {
+          categories.push({
+            id: page.id,
+            spend_name: spendName,
+            spend_id: props.spend_id?.rich_text?.[0]?.text?.content || '',
+            spend_grp: props.spend_grp?.select?.name || props.spend_grp?.rich_text?.[0]?.text?.content || '',
+            spend_lifegrp: props.spend_lifegrp?.select?.name || props.spend_lifegrp?.rich_text?.[0]?.text?.content || ''
+          });
         }
       }
 
@@ -44,12 +53,12 @@ async function getCategories(event) {
       cursor = response.next_cursor;
     }
 
-    // Sort alphabetically
-    const sortedCategories = Array.from(categories).sort();
+    // Sort by spend_name
+    categories.sort((a, b) => a.spend_name.localeCompare(b.spend_name));
 
     return success({
-      categories: sortedCategories,
-      count: sortedCategories.length
+      categories,
+      count: categories.length
     });
 
   } catch (err) {

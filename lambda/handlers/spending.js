@@ -16,8 +16,8 @@ async function createSpending(event) {
     const data = JSON.parse(event.body || '{}');
 
     // Validate required fields
-    if (!data.amount || !data.category || !data.charge_date) {
-      return error('Missing required fields: amount, category, charge_date', 400);
+    if (!data.amount || !data.category_id || !data.charge_date) {
+      return error('Missing required fields: amount, category_id, charge_date', 400);
     }
 
     // Build Notion properties
@@ -27,7 +27,7 @@ async function createSpending(event) {
       },
       amount: { number: parseFloat(data.amount) },
       currency: { select: { name: data.currency || 'EUR' } },
-      category: { select: { name: data.category } },
+      category: { relation: [{ id: data.category_id }] },
       charge_date: { date: { start: data.charge_date } },
       money_date: { date: { start: data.charge_date } },
       type: { select: { name: 'spending' } },
@@ -108,11 +108,11 @@ async function getSpending(event) {
       });
     }
 
-    // Add category filter
+    // Add category filter (by relation page ID)
     if (category) {
       filters.push({
         property: 'category',
-        select: { equals: category }
+        relation: { contains: category }
       });
     }
 
