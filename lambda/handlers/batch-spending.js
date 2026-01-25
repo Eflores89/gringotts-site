@@ -104,13 +104,17 @@ async function createSingleSpending(tx, fxRate) {
     },
     amount: { number: parseFloat(tx.amount) },
     currency: { select: { name: tx.currency || 'EUR' } },
-    category: { select: { name: tx.category || 'Uncategorized' } },
     charge_date: { date: { start: tx.charge_date } },
     money_date: { date: { start: tx.charge_date } },
     type: { select: { name: 'spending' } },
     mm: { number: parseInt(tx.charge_date.split('-')[1], 10) },
     euro_money: { number: euroMoney }
   };
+
+  // Add category relation if category_id is provided
+  if (tx.category_id) {
+    properties.category = { relation: [{ id: tx.category_id }] };
+  }
 
   // Optional fields
   if (tx.method) {

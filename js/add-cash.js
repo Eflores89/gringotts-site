@@ -36,7 +36,21 @@ const AddCash = {
       const response = await API.getCategories();
       this.categories = response.categories || [];
 
-      Utils.populateSelect(select, this.categories, 'Select a category...');
+      // Populate select with category objects (value = id, label = spend_name)
+      select.innerHTML = '';
+      const placeholder = document.createElement('option');
+      placeholder.value = '';
+      placeholder.textContent = 'Select a category...';
+      placeholder.disabled = true;
+      placeholder.selected = true;
+      select.appendChild(placeholder);
+
+      this.categories.forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat.id;  // Store the Notion page ID
+        opt.textContent = cat.spend_name;  // Display the spend_name
+        select.appendChild(opt);
+      });
     } catch (error) {
       console.error('Failed to load categories:', error);
       // Show error but allow manual entry
@@ -69,14 +83,16 @@ const AddCash = {
     const submitBtn = Utils.$('submit-btn');
 
     // Get form data
-    const category = Utils.$('category').value;
+    const categoryId = Utils.$('category').value;  // This is now the Notion page ID
+    const categorySelect = Utils.$('category');
+    const categoryName = categorySelect.options[categorySelect.selectedIndex]?.text || '';
     const amount = parseFloat(Utils.$('amount').value);
     const currency = document.querySelector('input[name="currency"]:checked').value;
     const chargeDate = Utils.$('charge_date').value;
     const note = Utils.$('note').value.trim();
 
     // Validate
-    if (!category) {
+    if (!categoryId) {
       Utils.showAlert('alert-container', 'Please select a category.', 'error');
       return;
     }
@@ -105,11 +121,11 @@ const AddCash = {
 
       // Prepare data for API
       const data = {
-        transaction: note || `Cash - ${category}`,
-        spend_name: note || `Cash - ${category}`,
+        transaction: note || `Cash - ${categoryName}`,
+        spend_name: note || `Cash - ${categoryName}`,
         amount: amount,
         currency: currency,
-        category: category,
+        category_id: categoryId,  // Pass the Notion page ID for the relation
         charge_date: chargeDate,
         money_date: chargeDate,
         method: CONFIG.DEFAULTS.METHOD,

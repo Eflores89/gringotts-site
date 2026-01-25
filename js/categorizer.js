@@ -135,16 +135,30 @@ const Categorizer = {
   /**
    * Categorize all transactions
    * @param {Array} transactions - Transactions to categorize
+   * @param {Array} categoriesList - List of category objects with id and spend_name
    * @returns {Array} - Transactions with categories applied
    */
-  categorizeAll(transactions) {
+  categorizeAll(transactions, categoriesList = []) {
     return transactions.map(tx => {
       const result = this.categorize(tx);
+
+      // Look up category_id from the categories list
+      let category_id = null;
+      if (result.category && categoriesList.length > 0) {
+        const matched = categoriesList.find(c =>
+          c.spend_name.toLowerCase() === result.category.toLowerCase()
+        );
+        if (matched) {
+          category_id = matched.id;
+        }
+      }
+
       return {
         ...tx,
         category: result.category,
+        category_id: category_id,
         matched_rule: result.matched_rule,
-        auto_categorized: result.auto_categorized
+        auto_categorized: result.auto_categorized && category_id !== null
       };
     });
   },
