@@ -4,8 +4,7 @@
 
 const CONFIG = {
   // API Configuration
-  // TODO: Update with actual API Gateway URL after Lambda deployment
-  API_URL: 'https://YOUR_API_ID.execute-api.us-east-1.amazonaws.com/prod',
+  API_URL: 'https://7lmkdtlssd.execute-api.us-east-1.amazonaws.com',
 
   // Authentication
   DASHBOARD_PASSWORD: 'floresguerrero',
