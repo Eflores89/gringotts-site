@@ -176,10 +176,11 @@ body {
 
 /* Fix date picker overflow */
 .form-group input[type="date"] {
-  max-width: 100%;
-  box-sizing: border-box;
-  -webkit-appearance: none;
-  appearance: none;
+  position: relative;
+}
+
+.card:has(input[type="date"]) {
+  overflow: visible;
 }
 
 .form-group textarea {
