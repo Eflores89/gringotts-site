@@ -9,8 +9,9 @@ const notion = new Client({
   auth: process.env.NOTION_TOKEN
 });
 
-// Database ID from environment
+// Database IDs from environment
 const DATABASE_ID = process.env.SPENDING_DATABASE_ID;
+const CATEGORIES_DATABASE_ID = process.env.CATEGORIES_DATABASE_ID;
 
 // CORS headers for API Gateway
 const CORS_HEADERS = {
@@ -140,6 +141,7 @@ function getRichText(prop) {
 module.exports = {
   notion,
   DATABASE_ID,
+  CATEGORIES_DATABASE_ID,
   CORS_HEADERS,
   success,
   error,

@@ -36,7 +36,12 @@ const AddCash = {
       const response = await API.getCategories();
       this.categories = response.categories || [];
 
-      Utils.populateSelect(select, this.categories, 'Select a category...');
+      // Convert to {value, label} format for select - value is the Notion page ID
+      const options = this.categories.map(c => ({
+        value: c.id,
+        label: c.spend_name
+      }));
+      Utils.populateSelect(select, options, 'Select a category...');
     } catch (error) {
       console.error('Failed to load categories:', error);
       // Show error but allow manual entry
@@ -69,14 +74,18 @@ const AddCash = {
     const submitBtn = Utils.$('submit-btn');
 
     // Get form data
-    const category = Utils.$('category').value;
+    const categoryId = Utils.$('category').value; // This is the Notion page ID
     const amount = parseFloat(Utils.$('amount').value);
     const currency = document.querySelector('input[name="currency"]:checked').value;
     const chargeDate = Utils.$('charge_date').value;
     const note = Utils.$('note').value.trim();
 
+    // Get category name for display purposes
+    const selectedCategory = this.categories.find(c => c.id === categoryId);
+    const categoryName = selectedCategory ? selectedCategory.spend_name : 'Unknown';
+
     // Validate
-    if (!category) {
+    if (!categoryId) {
       Utils.showAlert('alert-container', 'Please select a category.', 'error');
       return;
     }
@@ -105,11 +114,11 @@ const AddCash = {
 
       // Prepare data for API
       const data = {
-        transaction: note || `Cash - ${category}`,
-        spend_name: note || `Cash - ${category}`,
+        transaction: note || `Cash - ${categoryName}`,
+        spend_name: note || `Cash - ${categoryName}`,
         amount: amount,
         currency: currency,
-        category: category,
+        category_id: categoryId, // Pass the Notion page ID for the relation
         charge_date: chargeDate,
         money_date: chargeDate,
         method: CONFIG.DEFAULTS.METHOD,
