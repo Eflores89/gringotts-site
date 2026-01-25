@@ -214,7 +214,7 @@ const CleanSpending = {
             <select class="category-select" data-index="${originalIndex}">
               <option value="">-- Select --</option>
               ${this.categories.map(c =>
-                `<option value="${c.id}" ${tx.category_id === c.id ? 'selected' : ''}>${c.spend_name}</option>`
+                `<option value="${c.id}" ${tx.category_id === c.id ? 'selected' : ''}>${c.name || c.spend_name}</option>`
               ).join('')}
             </select>
           </td>

@@ -38,9 +38,15 @@ async function getCategories(event) {
           || props.spend_name?.title?.[0]?.text?.content
           || '';
 
+        // Get name (title) from the page
+        const name = props.name?.title?.[0]?.text?.content
+          || props.name?.rich_text?.[0]?.text?.content
+          || spendName;
+
         if (spendName) {
           categories.push({
             id: page.id,
+            name: name,
             spend_name: spendName,
             spend_id: props.spend_id?.rich_text?.[0]?.text?.content || '',
             spend_grp: props.spend_grp?.select?.name || props.spend_grp?.rich_text?.[0]?.text?.content || '',
