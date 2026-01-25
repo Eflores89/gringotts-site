@@ -80,6 +80,7 @@ body {
   padding: 24px;
   margin-bottom: 20px;
   transition: var(--transition);
+  overflow: hidden;
 }
 
 .card:hover {
