@@ -6,6 +6,7 @@ const Review = {
   spending: [],
   budget: [],
   categories: [],
+  categoryMap: {}, // Maps category ID to name
   fxRate: CONFIG.DEFAULT_FX_RATE,
   budgetChart: null,
   trendsChart: null,
@@ -71,17 +72,33 @@ const Review = {
       const response = await API.getCategories();
       this.categories = response.categories || [];
 
+      // Build category ID to name mapping
+      this.categoryMap = {};
+      this.categories.forEach(cat => {
+        this.categoryMap[cat.id] = cat.name || cat.spend_name;
+      });
+
       // Populate category filter
       const select = Utils.$('filter-category');
       this.categories.forEach(cat => {
         const opt = document.createElement('option');
-        opt.value = cat;
-        opt.textContent = cat;
+        opt.value = cat.id;
+        opt.textContent = cat.name || cat.spend_name;
         select.appendChild(opt);
       });
     } catch (error) {
       console.error('Failed to load categories:', error);
     }
+  },
+
+  /**
+   * Get category name from ID
+   * @param {string} categoryId - The category ID (UUID)
+   * @returns {string} The category name or 'Uncategorized'
+   */
+  getCategoryName(categoryId) {
+    if (!categoryId) return 'Uncategorized';
+    return this.categoryMap[categoryId] || categoryId;
   },
 
   /**
@@ -237,7 +254,7 @@ const Review = {
 
       return `
         <tr>
-          <td>${cat}</td>
+          <td>${this.getCategoryName(cat)}</td>
           <td style="text-align: right;">${Utils.formatCurrency(budget, 'EUR')}</td>
           <td style="text-align: right;">${Utils.formatCurrency(actual, 'EUR')}</td>
           <td style="text-align: right; color: ${variance >= 0 ? 'var(--success-color)' : 'var(--danger-color)'}">
@@ -279,7 +296,7 @@ const Review = {
     this.budgetChart = new Chart(ctx, {
       type: 'bar',
       data: {
-        labels: categories,
+        labels: categories.map(c => this.getCategoryName(c)),
         datasets: [
           {
             label: 'Budget',
@@ -345,7 +362,7 @@ const Review = {
 
       return `
         <tr>
-          <td>${cat}</td>
+          <td>${this.getCategoryName(cat)}</td>
           ${monthlyData.map(v => `
             <td style="text-align: right;">${v > 0 ? Utils.formatCurrency(v, 'EUR') : '-'}</td>
           `).join('')}
@@ -377,7 +394,7 @@ const Review = {
     ];
 
     const datasets = categories.map((cat, i) => ({
-      label: cat,
+      label: this.getCategoryName(cat),
       data: data[cat],
       backgroundColor: colors[i % colors.length] + '99',
       borderColor: colors[i % colors.length],
