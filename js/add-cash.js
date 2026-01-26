@@ -48,7 +48,7 @@ const AddCash = {
       this.categories.forEach(cat => {
         const opt = document.createElement('option');
         opt.value = cat.id;  // Store the Notion page ID
-        opt.textContent = cat.spend_name;  // Display the spend_name
+        opt.textContent = cat.name || cat.spend_name;  // Display the name
         select.appendChild(opt);
       });
     } catch (error) {
