@@ -123,7 +123,15 @@ function getTitle(prop) {
 }
 
 function getNumber(prop) {
-  return prop?.number ?? null;
+  // Handle regular number properties
+  if (prop?.number !== undefined) {
+    return prop.number;
+  }
+  // Handle formula properties that return numbers
+  if (prop?.formula?.type === 'number') {
+    return prop.formula.number;
+  }
+  return null;
 }
 
 function getSelect(prop) {
