@@ -38,8 +38,10 @@ async function getCategories(event) {
           || props.spend_name?.title?.[0]?.text?.content
           || '';
 
-        // Get name (title) from the page
-        const name = props.name?.title?.[0]?.text?.content
+        // Get name (title) from the page - try both "Name" and "name" as Notion is case-sensitive
+        const name = props.Name?.title?.[0]?.text?.content
+          || props.Name?.rich_text?.[0]?.text?.content
+          || props.name?.title?.[0]?.text?.content
           || props.name?.rich_text?.[0]?.text?.content
           || spendName;
 
