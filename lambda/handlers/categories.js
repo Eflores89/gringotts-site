@@ -16,13 +16,17 @@ async function getCategories(event) {
     let cursor = undefined;
     let hasMore = true;
 
-    // Query the categories database
+    // Query the categories database (only status = "Latest")
     while (hasMore) {
       const response = await withRetry(async () => {
         return notion.databases.query({
           database_id: CATEGORIES_DATABASE_ID,
           start_cursor: cursor,
           page_size: 100,
+          filter: {
+            property: 'status',
+            status: { equals: 'Latest' }
+          },
           sorts: [
             { property: 'spend_name', direction: 'ascending' }
           ]
@@ -38,10 +42,8 @@ async function getCategories(event) {
           || props.spend_name?.title?.[0]?.text?.content
           || '';
 
-        // Get name (title) from the page - try both "Name" and "name" as Notion is case-sensitive
-        const name = props.Name?.title?.[0]?.text?.content
-          || props.Name?.rich_text?.[0]?.text?.content
-          || props.name?.title?.[0]?.text?.content
+
+        const name = props.name?.title?.[0]?.text?.content
           || props.name?.rich_text?.[0]?.text?.content
           || spendName;
 

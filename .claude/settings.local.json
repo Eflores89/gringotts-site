@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(aws lambda list-functions:*)",
+      "Bash(curl:*)",
+      "Bash(unzip:*)"
+    ]
+  }
+}
