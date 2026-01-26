@@ -175,7 +175,7 @@ const Review = {
   updateStats() {
     const totalBudget = this.budget.reduce((sum, b) => sum + (b.amount || 0), 0);
     const totalSpent = this.spending.reduce((sum, s) => {
-      return sum + Utils.toEur(s.amount, s.currency, this.fxRate);
+      return sum + (s.euro_money || 0);
     }, 0);
     const variance = totalBudget - totalSpent;
 
@@ -218,7 +218,7 @@ const Review = {
     const spendingByCategory = {};
     this.spending.forEach(s => {
       const cat = s.category || 'Uncategorized';
-      const amount = Utils.toEur(s.amount, s.currency, this.fxRate);
+      const amount = s.euro_money || 0;
       spendingByCategory[cat] = (spendingByCategory[cat] || 0) + amount;
     });
 
@@ -344,7 +344,7 @@ const Review = {
     this.spending.forEach(s => {
       const cat = s.category || 'Uncategorized';
       const month = Utils.getMonth(s.charge_date);
-      const amount = Utils.toEur(s.amount, s.currency, this.fxRate);
+      const amount = s.euro_money || 0;
 
       if (!dataByCategory[cat]) {
         dataByCategory[cat] = Array(12).fill(0);
