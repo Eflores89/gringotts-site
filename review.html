@@ -171,8 +171,14 @@
     <!-- Empty State -->
     <div id="empty-state" class="card hidden">
       <div style="text-align: center; padding: 40px;">
-        <div style="font-size: 3rem; color: var(--text-muted);">&#128202;</div>
-        <p style="margin-top: 15px; color: var(--text-light);">No data available for the selected filters.</p>
+        <div style="color: var(--text-muted); margin-bottom: 16px;">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="20" x2="18" y2="10"></line>
+            <line x1="12" y1="20" x2="12" y2="4"></line>
+            <line x1="6" y1="20" x2="6" y2="14"></line>
+          </svg>
+        </div>
+        <p style="margin-top: 15px; color: var(--text-secondary);">No data available for the selected filters.</p>
         <p style="color: var(--text-muted);">Try adjusting the month, year, or category filters.</p>
       </div>
     </div>

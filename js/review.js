@@ -301,16 +301,18 @@ const Review = {
           {
             label: 'Budget',
             data: categories.map(c => budgetData[c] || 0),
-            backgroundColor: 'rgba(52, 152, 219, 0.7)',
-            borderColor: 'rgba(52, 152, 219, 1)',
-            borderWidth: 1
+            backgroundColor: 'rgba(59, 130, 246, 0.6)',
+            borderColor: 'rgba(59, 130, 246, 1)',
+            borderWidth: 1,
+            borderRadius: 4
           },
           {
             label: 'Actual',
             data: categories.map(c => actualData[c] || 0),
-            backgroundColor: 'rgba(46, 204, 113, 0.7)',
-            borderColor: 'rgba(46, 204, 113, 1)',
-            borderWidth: 1
+            backgroundColor: 'rgba(16, 185, 129, 0.6)',
+            borderColor: 'rgba(16, 185, 129, 1)',
+            borderWidth: 1,
+            borderRadius: 4
           }
         ]
       },
@@ -318,14 +320,33 @@ const Review = {
         responsive: true,
         plugins: {
           legend: {
-            position: 'top'
+            position: 'top',
+            labels: {
+              color: '#94a3b8',
+              font: { family: 'Inter, sans-serif' },
+              padding: 20
+            }
           }
         },
         scales: {
           y: {
             beginAtZero: true,
+            grid: {
+              color: 'rgba(148, 163, 184, 0.1)'
+            },
             ticks: {
+              color: '#64748b',
+              font: { family: 'Inter, sans-serif' },
               callback: value => Utils.formatCurrency(value, 'EUR')
+            }
+          },
+          x: {
+            grid: {
+              color: 'rgba(148, 163, 184, 0.1)'
+            },
+            ticks: {
+              color: '#64748b',
+              font: { family: 'Inter, sans-serif' }
             }
           }
         }
@@ -386,19 +407,20 @@ const Review = {
       this.trendsChart.destroy();
     }
 
-    // Generate colors for each category
+    // Generate colors for each category (dark theme friendly)
     const colors = [
-      '#3498db', '#2ecc71', '#e74c3c', '#f39c12', '#9b59b6',
-      '#1abc9c', '#e67e22', '#34495e', '#16a085', '#c0392b',
-      '#27ae60', '#2980b9', '#8e44ad', '#d35400', '#7f8c8d'
+      '#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6',
+      '#06b6d4', '#ec4899', '#14b8a6', '#f97316', '#6366f1',
+      '#84cc16', '#0ea5e9', '#a855f7', '#22c55e', '#64748b'
     ];
 
     const datasets = categories.map((cat, i) => ({
       label: this.getCategoryName(cat),
       data: data[cat],
-      backgroundColor: colors[i % colors.length] + '99',
+      backgroundColor: colors[i % colors.length] + 'aa',
       borderColor: colors[i % colors.length],
-      borderWidth: 1
+      borderWidth: 1,
+      borderRadius: 2
     }));
 
     this.trendsChart = new Chart(ctx, {
@@ -411,17 +433,35 @@ const Review = {
         responsive: true,
         plugins: {
           legend: {
-            position: 'top'
+            position: 'top',
+            labels: {
+              color: '#94a3b8',
+              font: { family: 'Inter, sans-serif' },
+              padding: 16,
+              boxWidth: 12
+            }
           }
         },
         scales: {
           x: {
-            stacked: true
+            stacked: true,
+            grid: {
+              color: 'rgba(148, 163, 184, 0.1)'
+            },
+            ticks: {
+              color: '#64748b',
+              font: { family: 'Inter, sans-serif' }
+            }
           },
           y: {
             stacked: true,
             beginAtZero: true,
+            grid: {
+              color: 'rgba(148, 163, 184, 0.1)'
+            },
             ticks: {
+              color: '#64748b',
+              font: { family: 'Inter, sans-serif' },
               callback: value => Utils.formatCurrency(value, 'EUR')
             }
           }
