@@ -112,6 +112,7 @@ function extractPageData(page) {
     mm: getNumber(props.mm),
     euro_money: getNumber(props.euro_money),
     spend_name: getRichText(props.spend_name),
+    spend_era_name: getSelect(props.spend_era_name),
     status: getSelect(props.status),
     created_time: page.created_time
   };
