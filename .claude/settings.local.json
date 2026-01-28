@@ -3,7 +3,24 @@
     "allow": [
       "Bash(aws lambda list-functions:*)",
       "Bash(curl:*)",
-      "Bash(unzip:*)"
+      "Bash(unzip:*)",
+      "Bash(wsl -e bash -c \"cd /mnt/c/Users/eduar/repos/gringotts-site/lambda && rm -f ../gringotts-lambda.zip && zip -r ../gringotts-lambda.zip . -x ''*.git*''\")",
+      "Bash(wsl -e bash -c \"sudo apt-get update && sudo apt-get install -y zip\")",
+      "Bash(wsl -e which:*)",
+      "Bash(wsl -e ls:*)",
+      "Bash(dir:*)",
+      "Bash(findstr:*)",
+      "Bash(wsl:*)",
+      "Bash(python:*)",
+      "Bash(aws lambda update-function-code:*)",
+      "Bash(aws configure list:*)",
+      "Bash(aws lambda get-function:*)",
+      "Bash(gh issue view:*)",
+      "WebFetch(domain:github.com)",
+      "mcp__claude_ai_Notion__notion-fetch",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nFix extraction of spend_era_name rollup property from Notion\n\nThe spend_era_name field is a rollup column in Notion, not a select\nproperty. Rollup properties have a different structure than select:\n- Select property: { select: { name: value } }\n- Rollup property: { rollup: { type: \"array\", array: [...] } }\n\nAdded getRollup\\(\\) helper to handle rollup properties and updated\nextractPageData to use it for spend_era_name and spend_name fields.\n\nFixes #22\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git push)"
     ]
   }
 }
