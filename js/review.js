@@ -170,13 +170,23 @@ const Review = {
   },
 
   /**
+   * Get amount in euros for any record (spending or budget)
+   * Uses euro_money if available, otherwise converts using FX rate
+   */
+  getEuroAmount(record) {
+    if (record.euro_money != null) {
+      return record.euro_money;
+    }
+    // Fallback: convert using amount and currency
+    return Utils.toEur(record.amount || 0, record.currency || 'EUR', this.fxRate);
+  },
+
+  /**
    * Update summary statistics
    */
   updateStats() {
-    const totalBudget = this.budget.reduce((sum, b) => sum + (b.amount || 0), 0);
-    const totalSpent = this.spending.reduce((sum, s) => {
-      return sum + (s.euro_money || 0);
-    }, 0);
+    const totalBudget = this.budget.reduce((sum, b) => sum + this.getEuroAmount(b), 0);
+    const totalSpent = this.spending.reduce((sum, s) => sum + this.getEuroAmount(s), 0);
     const variance = totalBudget - totalSpent;
 
     Utils.setText('stat-budget', Utils.formatCurrency(totalBudget, 'EUR'));
@@ -220,7 +230,7 @@ const Review = {
     this.spending.forEach(s => {
       const era = s.spend_era_name || 'Other';
       const cat = s.category || 'Uncategorized';
-      const amount = s.euro_money || 0;
+      const amount = this.getEuroAmount(s);
 
       // Track by era -> category
       if (!spendingByEra[era]) {
@@ -238,7 +248,7 @@ const Review = {
     this.budget.forEach(b => {
       const era = b.spend_era_name || 'Other';
       const cat = b.category || 'Uncategorized';
-      const amount = b.amount || 0;
+      const amount = this.getEuroAmount(b);
 
       // Track by era -> category
       if (!budgetByEra[era]) {
@@ -435,7 +445,7 @@ const Review = {
       const era = s.spend_era_name || 'Other';
       const cat = s.category || 'Uncategorized';
       const month = Utils.getMonth(s.charge_date);
-      const amount = s.euro_money || 0;
+      const amount = this.getEuroAmount(s);
 
       // Track by era -> category
       if (!dataByEra[era]) {
