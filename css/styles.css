@@ -590,6 +590,35 @@ tbody tr:hover {
   background: rgba(16, 185, 129, 0.03);
 }
 
+/* Era subtotal rows - highlighted grouping */
+.era-subtotal-row {
+  background: var(--bg-tertiary);
+  border-top: 2px solid var(--border-accent);
+}
+
+.era-subtotal-row td {
+  background: var(--bg-tertiary);
+  color: var(--accent-primary);
+  font-weight: 600;
+}
+
+.era-subtotal-row:hover {
+  background: var(--bg-elevated);
+}
+
+.era-subtotal-row:hover td {
+  background: var(--bg-elevated);
+}
+
+/* Category rows within era groups */
+.era-category-row td {
+  color: var(--text-secondary);
+}
+
+.era-category-row:hover td {
+  color: var(--text-primary);
+}
+
 /* Status Badges */
 .badge {
   display: inline-flex;

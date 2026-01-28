@@ -214,56 +214,125 @@ const Review = {
    * Render Budget vs Actual view
    */
   renderBudgetVsActual() {
-    // Group spending by category
+    // Group spending by era and category
+    const spendingByEra = {};
     const spendingByCategory = {};
     this.spending.forEach(s => {
+      const era = s.spend_era_name || 'Other';
       const cat = s.category || 'Uncategorized';
       const amount = s.euro_money || 0;
+
+      // Track by era -> category
+      if (!spendingByEra[era]) {
+        spendingByEra[era] = {};
+      }
+      spendingByEra[era][cat] = (spendingByEra[era][cat] || 0) + amount;
+
+      // Also track total by category for chart
       spendingByCategory[cat] = (spendingByCategory[cat] || 0) + amount;
     });
 
-    // Group budget by category
+    // Group budget by era and category
+    const budgetByEra = {};
     const budgetByCategory = {};
     this.budget.forEach(b => {
+      const era = b.spend_era_name || 'Other';
       const cat = b.category || 'Uncategorized';
-      budgetByCategory[cat] = (budgetByCategory[cat] || 0) + (b.amount || 0);
+      const amount = b.amount || 0;
+
+      // Track by era -> category
+      if (!budgetByEra[era]) {
+        budgetByEra[era] = {};
+      }
+      budgetByEra[era][cat] = (budgetByEra[era][cat] || 0) + amount;
+
+      // Also track total by category for chart
+      budgetByCategory[cat] = (budgetByCategory[cat] || 0) + amount;
     });
 
-    // Get all categories
+    // Get all eras and categories
+    const allEras = [...new Set([
+      ...Object.keys(spendingByEra),
+      ...Object.keys(budgetByEra)
+    ])].sort();
+
     const allCategories = [...new Set([
       ...Object.keys(spendingByCategory),
       ...Object.keys(budgetByCategory)
     ])].sort();
 
-    // Render table
+    // Render table with era groups
     const tbody = Utils.$('budget-table-body');
     let totalBudget = 0;
     let totalActual = 0;
+    let rows = [];
 
-    tbody.innerHTML = allCategories.map(cat => {
-      const budget = budgetByCategory[cat] || 0;
-      const actual = spendingByCategory[cat] || 0;
-      const variance = budget - actual;
+    allEras.forEach(era => {
+      const eraSpending = spendingByEra[era] || {};
+      const eraBudget = budgetByEra[era] || {};
 
-      totalBudget += budget;
-      totalActual += actual;
+      // Get all categories in this era
+      const eraCategories = [...new Set([
+        ...Object.keys(eraSpending),
+        ...Object.keys(eraBudget)
+      ])].sort();
 
-      const status = variance >= 0
+      if (eraCategories.length === 0) return;
+
+      // Calculate era subtotals
+      let eraTotalBudget = 0;
+      let eraTotalActual = 0;
+      eraCategories.forEach(cat => {
+        eraTotalBudget += eraBudget[cat] || 0;
+        eraTotalActual += eraSpending[cat] || 0;
+      });
+      const eraVariance = eraTotalBudget - eraTotalActual;
+
+      // Add subtotal row at top of era group
+      const subtotalStatus = eraVariance >= 0
         ? '<span class="badge badge-success">Under</span>'
         : '<span class="badge badge-danger">Over</span>';
 
-      return `
-        <tr>
-          <td>${this.getCategoryName(cat)}</td>
-          <td style="text-align: right;">${Utils.formatCurrency(budget, 'EUR')}</td>
-          <td style="text-align: right;">${Utils.formatCurrency(actual, 'EUR')}</td>
-          <td style="text-align: right; color: ${variance >= 0 ? 'var(--success-color)' : 'var(--danger-color)'}">
-            ${variance >= 0 ? '+' : ''}${Utils.formatCurrency(variance, 'EUR')}
+      rows.push(`
+        <tr class="era-subtotal-row">
+          <td><strong>${era}</strong></td>
+          <td style="text-align: right;"><strong>${Utils.formatCurrency(eraTotalBudget, 'EUR')}</strong></td>
+          <td style="text-align: right;"><strong>${Utils.formatCurrency(eraTotalActual, 'EUR')}</strong></td>
+          <td style="text-align: right; color: ${eraVariance >= 0 ? 'var(--success-color)' : 'var(--danger-color)'}">
+            <strong>${eraVariance >= 0 ? '+' : ''}${Utils.formatCurrency(eraVariance, 'EUR')}</strong>
           </td>
-          <td>${status}</td>
+          <td>${subtotalStatus}</td>
         </tr>
-      `;
-    }).join('');
+      `);
+
+      // Add category rows within this era
+      eraCategories.forEach(cat => {
+        const budget = eraBudget[cat] || 0;
+        const actual = eraSpending[cat] || 0;
+        const variance = budget - actual;
+
+        totalBudget += budget;
+        totalActual += actual;
+
+        const status = variance >= 0
+          ? '<span class="badge badge-success">Under</span>'
+          : '<span class="badge badge-danger">Over</span>';
+
+        rows.push(`
+          <tr class="era-category-row">
+            <td style="padding-left: 28px;">${this.getCategoryName(cat)}</td>
+            <td style="text-align: right;">${Utils.formatCurrency(budget, 'EUR')}</td>
+            <td style="text-align: right;">${Utils.formatCurrency(actual, 'EUR')}</td>
+            <td style="text-align: right; color: ${variance >= 0 ? 'var(--success-color)' : 'var(--danger-color)'}">
+              ${variance >= 0 ? '+' : ''}${Utils.formatCurrency(variance, 'EUR')}
+            </td>
+            <td>${status}</td>
+          </tr>
+        `);
+      });
+    });
+
+    tbody.innerHTML = rows.join('');
 
     // Update totals
     const totalVariance = totalBudget - totalActual;
@@ -358,39 +427,84 @@ const Review = {
    * Render Spending Trends view
    */
   renderSpendingTrends() {
-    // Group spending by category and month
+    // Group spending by era, category, and month
+    const dataByEra = {};
     const dataByCategory = {};
-    const months = Array(12).fill(0).map((_, i) => i + 1);
 
     this.spending.forEach(s => {
+      const era = s.spend_era_name || 'Other';
       const cat = s.category || 'Uncategorized';
       const month = Utils.getMonth(s.charge_date);
       const amount = s.euro_money || 0;
 
+      // Track by era -> category
+      if (!dataByEra[era]) {
+        dataByEra[era] = {};
+      }
+      if (!dataByEra[era][cat]) {
+        dataByEra[era][cat] = Array(12).fill(0);
+      }
+      dataByEra[era][cat][month - 1] += amount;
+
+      // Also track by category for chart
       if (!dataByCategory[cat]) {
         dataByCategory[cat] = Array(12).fill(0);
       }
       dataByCategory[cat][month - 1] += amount;
     });
 
+    // Get all eras sorted
+    const allEras = Object.keys(dataByEra).sort();
     const categories = Object.keys(dataByCategory).sort();
 
-    // Render table
+    // Render table with era groups
     const tbody = Utils.$('trends-table-body');
-    tbody.innerHTML = categories.map(cat => {
-      const monthlyData = dataByCategory[cat];
-      const total = monthlyData.reduce((a, b) => a + b, 0);
+    let rows = [];
 
-      return `
-        <tr>
-          <td>${this.getCategoryName(cat)}</td>
-          ${monthlyData.map(v => `
-            <td style="text-align: right;">${v > 0 ? Utils.formatCurrency(v, 'EUR') : '-'}</td>
+    allEras.forEach(era => {
+      const eraData = dataByEra[era];
+      const eraCategories = Object.keys(eraData).sort();
+
+      if (eraCategories.length === 0) return;
+
+      // Calculate era subtotals by month
+      const eraMonthlyTotals = Array(12).fill(0);
+      eraCategories.forEach(cat => {
+        eraData[cat].forEach((val, i) => {
+          eraMonthlyTotals[i] += val;
+        });
+      });
+      const eraTotal = eraMonthlyTotals.reduce((a, b) => a + b, 0);
+
+      // Add subtotal row at top of era group
+      rows.push(`
+        <tr class="era-subtotal-row">
+          <td><strong>${era}</strong></td>
+          ${eraMonthlyTotals.map(v => `
+            <td style="text-align: right;"><strong>${v > 0 ? Utils.formatCurrency(v, 'EUR') : '-'}</strong></td>
           `).join('')}
-          <td style="text-align: right; font-weight: bold;">${Utils.formatCurrency(total, 'EUR')}</td>
+          <td style="text-align: right;"><strong>${Utils.formatCurrency(eraTotal, 'EUR')}</strong></td>
         </tr>
-      `;
-    }).join('');
+      `);
+
+      // Add category rows within this era
+      eraCategories.forEach(cat => {
+        const monthlyData = eraData[cat];
+        const total = monthlyData.reduce((a, b) => a + b, 0);
+
+        rows.push(`
+          <tr class="era-category-row">
+            <td style="padding-left: 28px;">${this.getCategoryName(cat)}</td>
+            ${monthlyData.map(v => `
+              <td style="text-align: right;">${v > 0 ? Utils.formatCurrency(v, 'EUR') : '-'}</td>
+            `).join('')}
+            <td style="text-align: right; font-weight: bold;">${Utils.formatCurrency(total, 'EUR')}</td>
+          </tr>
+        `);
+      });
+    });
+
+    tbody.innerHTML = rows.join('');
 
     // Render chart
     this.renderTrendsChart(categories, dataByCategory);
