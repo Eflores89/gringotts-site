@@ -111,8 +111,8 @@ function extractPageData(page) {
     type: getSelect(props.type),
     mm: getNumber(props.mm),
     euro_money: getNumber(props.euro_money),
-    spend_name: getRichText(props.spend_name),
-    spend_era_name: getSelect(props.spend_era_name),
+    spend_name: getRollup(props.spend_name) || getRichText(props.spend_name),
+    spend_era_name: getRollup(props.spend_era_name),
     status: getSelect(props.status),
     created_time: page.created_time
   };
@@ -142,6 +142,40 @@ function getRichText(prop) {
 function getRelation(prop) {
   // Return first related page ID or null
   return prop?.relation?.[0]?.id || null;
+}
+
+function getRollup(prop) {
+  // Handle rollup properties - can return array or single value
+  if (!prop?.rollup) return null;
+
+  const rollup = prop.rollup;
+
+  // Single value rollups
+  if (rollup.type === 'string') {
+    return rollup.string || null;
+  }
+  if (rollup.type === 'number') {
+    return rollup.number;
+  }
+
+  // Array rollups - get first value
+  if (rollup.type === 'array' && rollup.array?.length > 0) {
+    const first = rollup.array[0];
+    if (first.type === 'rich_text') {
+      return first.rich_text?.[0]?.text?.content || null;
+    }
+    if (first.type === 'title') {
+      return first.title?.[0]?.text?.content || null;
+    }
+    if (first.type === 'select') {
+      return first.select?.name || null;
+    }
+    if (first.type === 'number') {
+      return first.number;
+    }
+  }
+
+  return null;
 }
 
 module.exports = {
