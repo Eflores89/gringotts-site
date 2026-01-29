@@ -8,6 +8,8 @@ const categoriesHandler = require('./handlers/categories');
 const spendingHandler = require('./handlers/spending');
 const batchSpendingHandler = require('./handlers/batch-spending');
 const budgetHandler = require('./handlers/budget');
+const investmentsHandler = require('./handlers/investments');
+const allocationsHandler = require('./handlers/allocations');
 
 /**
  * Main Lambda handler
@@ -53,6 +55,22 @@ exports.handler = async (event) => {
 
     if (path === '/budget' && method === 'GET') {
       return await budgetHandler.getBudget(event);
+    }
+
+    if (path === '/investments' && method === 'GET') {
+      return await investmentsHandler.getInvestments(event);
+    }
+
+    if (path === '/investments' && method === 'POST') {
+      return await investmentsHandler.createInvestment(event);
+    }
+
+    if (path === '/allocations' && method === 'GET') {
+      return await allocationsHandler.getAllocations(event);
+    }
+
+    if (path === '/allocations' && method === 'POST') {
+      return await allocationsHandler.createAllocation(event);
     }
 
     // 404 Not Found
