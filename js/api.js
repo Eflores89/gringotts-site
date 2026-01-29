@@ -221,6 +221,18 @@ const API = {
     return this.request(endpoint);
   },
 
+  // ==================== Price Updates ====================
+
+  /**
+   * Trigger price refresh for all investments with tickers
+   * @returns {Promise<object>} - Update results {updated, failed, skipped, details}
+   */
+  async updatePrices() {
+    return this.request('/investments/prices', {
+      method: 'POST'
+    });
+  },
+
   // ==================== Utilities ====================
 
   /**

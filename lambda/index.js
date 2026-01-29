@@ -10,6 +10,7 @@ const batchSpendingHandler = require('./handlers/batch-spending');
 const budgetHandler = require('./handlers/budget');
 const investmentsHandler = require('./handlers/investments');
 const allocationsHandler = require('./handlers/allocations');
+const priceUpdateHandler = require('./handlers/price-update');
 
 /**
  * Main Lambda handler
@@ -71,6 +72,10 @@ exports.handler = async (event) => {
 
     if (path === '/allocations' && method === 'POST') {
       return await allocationsHandler.createAllocation(event);
+    }
+
+    if (path === '/investments/prices' && method === 'POST') {
+      return await priceUpdateHandler.updatePrices(event);
     }
 
     // 404 Not Found
