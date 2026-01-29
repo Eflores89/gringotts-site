@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Investments - Gringotts</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <header class="page-header">
+    <div class="container">
+      <h1>Gringotts Spending Tracker</h1>
+      <div class="nav-links">
+        <a href="index.html">Dashboard</a>
+        <a href="add-cash.html">Add Cash</a>
+        <a href="clean-spending.html">Clean Spending</a>
+        <a href="review.html">Review</a>
+        <a href="investments.html" class="active">Investments</a>
+        <a href="#" id="logout-btn">Logout</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- FX Rate Filters -->
+    <div class="filters">
+      <div class="form-group">
+        <label for="fx-usd">USD/EUR</label>
+        <input type="number" id="fx-usd" step="0.001" min="0.01" placeholder="0.92">
+      </div>
+      <div class="form-group">
+        <label for="fx-gbp">GBP/EUR</label>
+        <input type="number" id="fx-gbp" step="0.001" min="0.01" placeholder="1.17">
+      </div>
+      <div class="form-group">
+        <label for="fx-mxn">MXN/EUR</label>
+        <input type="number" id="fx-mxn" step="0.0001" min="0.001" placeholder="0.054">
+      </div>
+      <div class="form-group">
+        <label>&nbsp;</label>
+        <button id="apply-fx" class="btn btn-primary">Apply</button>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loading-state" class="card hidden">
+      <div style="text-align: center; padding: 40px;">
+        <div class="spinner spinner-dark" style="width: 40px; height: 40px;"></div>
+        <p style="margin-top: 15px; color: var(--text-light);">Loading investments...</p>
+      </div>
+    </div>
+
+    <!-- Alert Container -->
+    <div id="alert-container" class="hidden"></div>
+
+    <!-- Summary Stats -->
+    <div id="stats-container" class="stats-grid hidden">
+      <div class="stat-card">
+        <div class="label">Total Portfolio Value</div>
+        <div class="value" id="stat-total-value">--</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Total Gain / Loss</div>
+        <div class="value" id="stat-gain-loss">--</div>
+        <div class="change" id="stat-gain-loss-pct"></div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Liquid Value</div>
+        <div class="value" id="stat-liquid">--</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Unvested Value</div>
+        <div class="value" id="stat-unvested">--</div>
+      </div>
+    </div>
+
+    <!-- Portfolio Holdings Table -->
+    <div id="portfolio-section" class="card hidden">
+      <h2 class="card-title">Portfolio Holdings</h2>
+      <div class="table-container">
+        <table id="portfolio-table">
+          <thead>
+            <tr>
+              <th>Asset</th>
+              <th>Type</th>
+              <th style="text-align: right;">Qty</th>
+              <th style="text-align: right;">Current Value (EUR)</th>
+              <th style="text-align: right;">Gain / Loss</th>
+              <th style="text-align: right;">Return</th>
+              <th style="text-align: right;">% Portfolio</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="portfolio-table-body">
+          </tbody>
+          <tfoot>
+            <tr style="font-weight: bold;">
+              <td>TOTAL</td>
+              <td></td>
+              <td></td>
+              <td style="text-align: right;" id="total-value">--</td>
+              <td style="text-align: right;" id="total-gain-loss">--</td>
+              <td style="text-align: right;" id="total-return">--</td>
+              <td style="text-align: right;">100%</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div id="charts-section" class="hidden">
+      <!-- Gain/Loss + Asset Type row -->
+      <div class="chart-grid">
+        <div class="chart-container">
+          <h3>Gain / Loss by Asset</h3>
+          <canvas id="gainloss-chart"></canvas>
+        </div>
+        <div class="chart-container">
+          <h3>Asset Type Allocation</h3>
+          <canvas id="asset-type-chart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div id="empty-state" class="card hidden">
+      <div style="text-align: center; padding: 40px;">
+        <div style="color: var(--text-muted); margin-bottom: 16px;">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline>
+            <polyline points="16 7 22 7 22 13"></polyline>
+          </svg>
+        </div>
+        <p style="margin-top: 15px; color: var(--text-secondary);">No investments found.</p>
+        <p style="color: var(--text-muted);">Add investments to your Notion database to see them here.</p>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/investments.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!Auth.requireAuth()) return;
+      Auth.initLogoutButton();
+      Investments.init();
+    });
+  </script>
+</body>
+</html>

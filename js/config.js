@@ -18,6 +18,15 @@ const CONFIG = {
   DEFAULT_CURRENCY: 'EUR',
   DEFAULT_FX_RATE: 21.5, // EUR to MXN default rate
 
+  // Investment Currency Settings (rates TO EUR)
+  INVESTMENT_CURRENCIES: ['USD', 'EUR', 'MXN', 'GBP'],
+  FX_RATES: {
+    EUR: 1.0,
+    USD: 0.92,
+    MXN: 0.054,
+    GBP: 1.17
+  },
+
   // Batch Processing
   BATCH_SIZE: 50,
   BATCH_DELAY_MS: 1000,
@@ -55,3 +64,5 @@ Object.freeze(CONFIG);
 Object.freeze(CONFIG.SPENDEE_COLUMNS);
 Object.freeze(CONFIG.DEFAULTS);
 Object.freeze(CONFIG.MONTHS);
+Object.freeze(CONFIG.FX_RATES);
+Object.freeze(CONFIG.INVESTMENT_CURRENCIES);
