@@ -36,6 +36,39 @@ const Investments = {
       this.fxRates.MXN = parseFloat(Utils.$('fx-mxn').value) || CONFIG.FX_RATES.MXN;
       this.refresh();
     });
+
+    Utils.$('refresh-prices').addEventListener('click', () => {
+      this.refreshPrices();
+    });
+  },
+
+  /**
+   * Trigger backend price refresh and reload data
+   */
+  async refreshPrices() {
+    const btn = Utils.$('refresh-prices');
+    const originalHTML = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner" style="width: 16px; height: 16px;"></div> Updating...';
+
+    try {
+      const result = await API.updatePrices();
+
+      const msg = `Prices updated: ${result.updated} updated, ${result.failed} failed, ${result.skipped} skipped`;
+      Utils.showAlert('alert-container', msg, result.failed > 0 ? 'warning' : 'success');
+      Utils.show('alert-container');
+
+      // Reload data to reflect new prices
+      await this.loadData();
+
+    } catch (err) {
+      console.error('Price refresh failed:', err);
+      Utils.showAlert('alert-container', `Price refresh failed: ${err.message}`, 'error');
+      Utils.show('alert-container');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = originalHTML;
+    }
   },
 
   /**
