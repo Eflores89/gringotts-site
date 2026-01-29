@@ -174,6 +174,53 @@ const API = {
     return this.request(endpoint);
   },
 
+  // ==================== Investments ====================
+
+  /**
+   * Get all investments
+   * @param {object} filters - Query filters (asset_type, currency, vested_only)
+   * @returns {Promise<object>} - Investment data
+   */
+  async getInvestments(filters = {}) {
+    const params = new URLSearchParams();
+    if (filters.asset_type) params.append('asset_type', filters.asset_type);
+    if (filters.currency) params.append('currency', filters.currency);
+    if (filters.vested_only) params.append('vested_only', 'true');
+
+    const queryString = params.toString();
+    const endpoint = queryString ? `/investments?${queryString}` : '/investments';
+
+    return this.request(endpoint);
+  },
+
+  /**
+   * Create a new investment entry
+   * @param {object} data - Investment data
+   * @returns {Promise<object>} - Created investment
+   */
+  async createInvestment(data) {
+    return this.request('/investments', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  },
+
+  /**
+   * Get allocations for investments
+   * @param {object} filters - Query filters (investment_id, allocation_type)
+   * @returns {Promise<object>} - Allocation data
+   */
+  async getAllocations(filters = {}) {
+    const params = new URLSearchParams();
+    if (filters.investment_id) params.append('investment_id', filters.investment_id);
+    if (filters.allocation_type) params.append('allocation_type', filters.allocation_type);
+
+    const queryString = params.toString();
+    const endpoint = queryString ? `/allocations?${queryString}` : '/allocations';
+
+    return this.request(endpoint);
+  },
+
   // ==================== Utilities ====================
 
   /**

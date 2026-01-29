@@ -1021,6 +1021,20 @@ tr.uncategorized td:first-child {
   }
 }
 
+/* Chart Grid Layout */
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 768px) {
+  .chart-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Hover animations for interactive elements */
 @media (hover: hover) {
   .nav-card:hover .icon {

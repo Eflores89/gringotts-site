@@ -114,6 +114,24 @@ const Utils = {
     return amount; // Unknown currency, return as-is
   },
 
+  /**
+   * Convert any amount to EUR using a rates map
+   * @param {number} amount - Amount to convert
+   * @param {string} currency - Source currency (USD, EUR, MXN, GBP)
+   * @param {object} fxRates - Exchange rates to EUR, e.g. {USD: 0.92, GBP: 1.17}
+   * @returns {number}
+   */
+  convertToEur(amount, currency, fxRates) {
+    if (!amount) return 0;
+    if (currency === 'EUR') return amount;
+    const rate = fxRates[currency];
+    if (!rate) {
+      console.warn(`Unknown currency: ${currency}, returning original amount`);
+      return amount;
+    }
+    return amount * rate;
+  },
+
   // ==================== DOM Helpers ====================
 
   /**
