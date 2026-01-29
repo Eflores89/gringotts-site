@@ -134,6 +134,33 @@
           <canvas id="asset-type-chart"></canvas>
         </div>
       </div>
+
+      <!-- Allocation Breakdown -->
+      <div class="chart-container">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+          <h3 style="margin-bottom: 0;">Allocation Breakdown</h3>
+          <div class="radio-group" id="allocation-selector">
+            <label>
+              <input type="radio" name="allocation-view" value="industry" checked>
+              <span>Industry</span>
+            </label>
+            <label>
+              <input type="radio" name="allocation-view" value="geography">
+              <span>Geography</span>
+            </label>
+          </div>
+        </div>
+        <div id="allocation-empty" class="hidden" style="text-align: center; padding: 24px; color: var(--text-muted);">
+          No allocation data found. Add entries to the Investment Allocations database in Notion.
+        </div>
+        <canvas id="allocation-chart"></canvas>
+      </div>
+
+      <!-- Portfolio Value Over Time -->
+      <div class="chart-container">
+        <h3>Portfolio Value Over Time</h3>
+        <canvas id="value-history-chart"></canvas>
+      </div>
     </div>
 
     <!-- Empty State -->

@@ -40,6 +40,13 @@ const Investments = {
     Utils.$('refresh-prices').addEventListener('click', () => {
       this.refreshPrices();
     });
+
+    // Allocation view toggle
+    document.querySelectorAll('input[name="allocation-view"]').forEach(radio => {
+      radio.addEventListener('change', () => {
+        this.renderAllocationChart();
+      });
+    });
   },
 
   /**
@@ -116,6 +123,8 @@ const Investments = {
     this.renderPortfolioTable();
     this.renderGainLossChart();
     this.renderAssetTypeChart();
+    this.renderAllocationChart();
+    this.renderValueHistoryChart();
 
     Utils.show('stats-container');
     Utils.show('portfolio-section');
@@ -374,6 +383,253 @@ const Investments = {
                   };
                 });
               }
+            }
+          }
+        }
+      }
+    });
+  },
+
+  // ==================== Allocation Breakdown Chart ====================
+
+  /**
+   * Calculate weighted allocation percentages across all investments
+   * Each investment's allocations are weighted by its EUR value share of portfolio
+   * @param {string} type - 'industry' or 'geography'
+   * @returns {{labels: string[], values: number[]}}
+   */
+  calculateWeightedAllocations(type) {
+    const totalValue = this.getTotalValue();
+    if (totalValue === 0) return { labels: [], values: [] };
+
+    const weighted = {};
+
+    this.investments.forEach(inv => {
+      const invValue = this.getEuroValue(inv);
+      const weight = invValue / totalValue;
+
+      // Find allocations for this investment matching the type
+      const invAllocations = this.allocations.filter(a =>
+        a.allocation_type === type &&
+        a.investment && a.investment.includes(inv.id)
+      );
+
+      if (invAllocations.length === 0) {
+        // No allocation data - bucket as "Unclassified"
+        weighted['Unclassified'] = (weighted['Unclassified'] || 0) + weight * 100;
+      } else {
+        invAllocations.forEach(a => {
+          const cat = a.category || 'Other';
+          weighted[cat] = (weighted[cat] || 0) + weight * (a.percentage || 0);
+        });
+      }
+    });
+
+    // Sort by value descending
+    const sorted = Object.entries(weighted)
+      .filter(([, v]) => v > 0.1) // Filter out tiny slices
+      .sort((a, b) => b[1] - a[1]);
+
+    return {
+      labels: sorted.map(([k]) => k),
+      values: sorted.map(([, v]) => v)
+    };
+  },
+
+  /**
+   * Render allocation breakdown doughnut chart (industry or geography)
+   */
+  renderAllocationChart() {
+    const type = document.querySelector('input[name="allocation-view"]:checked')?.value || 'industry';
+    const ctx = Utils.$('allocation-chart');
+    const emptyEl = Utils.$('allocation-empty');
+
+    if (this.charts.allocation) {
+      this.charts.allocation.destroy();
+      this.charts.allocation = null;
+    }
+
+    const data = this.calculateWeightedAllocations(type);
+
+    if (data.labels.length === 0) {
+      ctx.style.display = 'none';
+      Utils.show('allocation-empty');
+      return;
+    }
+
+    ctx.style.display = '';
+    Utils.hide('allocation-empty');
+
+    const colors = [
+      '#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6',
+      '#06b6d4', '#ec4899', '#14b8a6', '#f97316', '#6366f1',
+      '#84cc16', '#0ea5e9', '#a855f7', '#22c55e', '#64748b'
+    ];
+
+    this.charts.allocation = new Chart(ctx.getContext('2d'), {
+      type: 'doughnut',
+      data: {
+        labels: data.labels,
+        datasets: [{
+          data: data.values,
+          backgroundColor: colors.slice(0, data.labels.length),
+          borderColor: '#0a0a0f',
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            position: 'right',
+            labels: {
+              color: '#94a3b8',
+              font: { family: 'Inter, sans-serif' },
+              padding: 14,
+              generateLabels: (chart) => {
+                const dataset = chart.data.datasets[0];
+                const total = dataset.data.reduce((a, b) => a + b, 0);
+                return chart.data.labels.map((label, i) => {
+                  const pct = total > 0 ? ((dataset.data[i] / total) * 100).toFixed(1) : '0.0';
+                  return {
+                    text: `${label} (${pct}%)`,
+                    fillStyle: dataset.backgroundColor[i],
+                    strokeStyle: dataset.borderColor,
+                    lineWidth: dataset.borderWidth,
+                    index: i
+                  };
+                });
+              }
+            }
+          },
+          tooltip: {
+            callbacks: {
+              label: (context) => {
+                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                const pct = total > 0 ? ((context.raw / total) * 100).toFixed(1) : '0.0';
+                return `${context.label}: ${pct}%`;
+              }
+            }
+          }
+        }
+      }
+    });
+  },
+
+  // ==================== Portfolio Value Over Time ====================
+
+  /**
+   * Build monthly portfolio value history from purchase dates
+   * Assumes each investment was added at purchase_date and still held at current value
+   * @returns {{labels: string[], values: number[]}}
+   */
+  calculateValueHistory() {
+    if (this.investments.length === 0) return { labels: [], values: [] };
+
+    // Sort investments by purchase date
+    const sorted = [...this.investments]
+      .filter(inv => inv.purchase_date)
+      .sort((a, b) => new Date(a.purchase_date) - new Date(b.purchase_date));
+
+    if (sorted.length === 0) return { labels: [], values: [] };
+
+    const earliest = new Date(sorted[0].purchase_date);
+    const now = new Date();
+
+    // Generate monthly data points from earliest purchase to now
+    const labels = [];
+    const values = [];
+    const cursor = new Date(earliest.getFullYear(), earliest.getMonth(), 1);
+
+    while (cursor <= now) {
+      const dateStr = cursor.toISOString().split('T')[0];
+      const label = `${cursor.toLocaleString('en', { month: 'short' })} ${cursor.getFullYear()}`;
+
+      // Sum value of all investments purchased on or before this month
+      let monthValue = 0;
+      this.investments.forEach(inv => {
+        if (!inv.purchase_date) return;
+        const purchaseDate = new Date(inv.purchase_date);
+        if (purchaseDate <= new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0)) {
+          // Use cost basis for historical months, current value for current month
+          const isCurrentMonth = cursor.getFullYear() === now.getFullYear() &&
+                                  cursor.getMonth() === now.getMonth();
+          monthValue += isCurrentMonth ? this.getEuroValue(inv) : this.getCostBasis(inv);
+        }
+      });
+
+      labels.push(label);
+      values.push(monthValue);
+
+      cursor.setMonth(cursor.getMonth() + 1);
+    }
+
+    // Ensure the last data point uses current market values
+    if (values.length > 0) {
+      values[values.length - 1] = this.getTotalValue();
+    }
+
+    return { labels, values };
+  },
+
+  /**
+   * Render portfolio value over time line chart
+   */
+  renderValueHistoryChart() {
+    const ctx = Utils.$('value-history-chart').getContext('2d');
+
+    if (this.charts.valueHistory) {
+      this.charts.valueHistory.destroy();
+    }
+
+    const data = this.calculateValueHistory();
+
+    if (data.labels.length === 0) return;
+
+    this.charts.valueHistory = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: data.labels,
+        datasets: [{
+          label: 'Portfolio Value (EUR)',
+          data: data.values,
+          borderColor: '#10b981',
+          backgroundColor: 'rgba(16, 185, 129, 0.08)',
+          fill: true,
+          tension: 0.3,
+          pointRadius: data.labels.length > 24 ? 0 : 3,
+          pointHoverRadius: 5,
+          pointBackgroundColor: '#10b981',
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (context) => Utils.formatCurrency(context.raw, 'EUR')
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: false,
+            grid: { color: 'rgba(148, 163, 184, 0.1)' },
+            ticks: {
+              color: '#64748b',
+              font: { family: 'Inter, sans-serif' },
+              callback: value => Utils.formatCurrency(value, 'EUR')
+            }
+          },
+          x: {
+            grid: { color: 'rgba(148, 163, 184, 0.05)' },
+            ticks: {
+              color: '#64748b',
+              font: { family: 'Inter, sans-serif' },
+              maxRotation: 45,
+              maxTicksLimit: 12
             }
           }
         }
