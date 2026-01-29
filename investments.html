@@ -163,6 +163,51 @@
       </div>
     </div>
 
+    <!-- Projections Section -->
+    <div id="projections-section" class="hidden">
+      <div class="chart-container">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 16px;">
+          <h3 style="margin-bottom: 0;">5-Year Portfolio Projection</h3>
+          <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+            <div class="range-control">
+              <label for="growth-rate-slider">Annual Growth</label>
+              <div class="range-wrapper">
+                <input type="range" id="growth-rate-slider" min="0" max="20" step="0.5" value="7">
+                <span class="range-value" id="growth-rate-value">7.0%</span>
+              </div>
+            </div>
+            <label class="toggle-label">
+              <input type="checkbox" id="include-unvested" checked>
+              <span>Include unvested</span>
+            </label>
+          </div>
+        </div>
+        <canvas id="projection-chart"></canvas>
+      </div>
+
+      <!-- Projection Summary Table -->
+      <div class="card">
+        <h3 class="card-title">Projection Summary</h3>
+        <div class="table-container">
+          <table id="projection-table">
+            <thead>
+              <tr>
+                <th>Year</th>
+                <th style="text-align: right;">Q1</th>
+                <th style="text-align: right;">Q2</th>
+                <th style="text-align: right;">Q3</th>
+                <th style="text-align: right;">Q4</th>
+                <th style="text-align: right;">Year-End</th>
+                <th style="text-align: right;">YoY Growth</th>
+              </tr>
+            </thead>
+            <tbody id="projection-table-body">
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
     <!-- Empty State -->
     <div id="empty-state" class="card hidden">
       <div style="text-align: center; padding: 40px;">

@@ -47,6 +47,18 @@ const Investments = {
         this.renderAllocationChart();
       });
     });
+
+    // Projection controls
+    const slider = Utils.$('growth-rate-slider');
+    const valueLabel = Utils.$('growth-rate-value');
+    slider.addEventListener('input', () => {
+      valueLabel.textContent = `${parseFloat(slider.value).toFixed(1)}%`;
+      this.renderProjection();
+    });
+
+    Utils.$('include-unvested').addEventListener('change', () => {
+      this.renderProjection();
+    });
   },
 
   /**
@@ -125,10 +137,12 @@ const Investments = {
     this.renderAssetTypeChart();
     this.renderAllocationChart();
     this.renderValueHistoryChart();
+    this.renderProjection();
 
     Utils.show('stats-container');
     Utils.show('portfolio-section');
     Utils.show('charts-section');
+    Utils.show('projections-section');
   },
 
   // ==================== Calculations ====================
@@ -635,5 +649,229 @@ const Investments = {
         }
       }
     });
+  },
+
+  // ==================== Projections ====================
+
+  /**
+   * Recalculate and render both projection chart and table
+   */
+  renderProjection() {
+    const data = this.calculateProjection();
+    this.renderProjectionChart(data);
+    this.renderProjectionTable(data);
+  },
+
+  /**
+   * Clean projection calculation that properly handles vesting transitions
+   * @returns {{labels: string[], liquid: number[], withUnvested: number[], yearlyData: Array}}
+   */
+  calculateProjection() {
+    const annualRate = parseFloat(Utils.$('growth-rate-slider').value) / 100;
+    const quarterlyRate = Math.pow(1 + annualRate, 0.25) - 1;
+    const includeUnvested = Utils.$('include-unvested').checked;
+
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentQuarter = Math.floor(now.getMonth() / 3); // 0-based
+
+    // Build individual investment tracking with vesting info
+    const holdings = this.investments.map(inv => ({
+      value: this.getEuroValue(inv),
+      vested: this.isVested(inv),
+      vestQuarterOffset: inv.vest_date ? (() => {
+        const vd = new Date(inv.vest_date);
+        const yDiff = vd.getFullYear() - currentYear;
+        const qDiff = Math.floor(vd.getMonth() / 3) - currentQuarter;
+        return yDiff * 4 + qDiff;
+      })() : -1 // -1 means already vested or no vest date
+    }));
+
+    const labels = [];
+    const liquidSeries = [];
+    const withUnvestedSeries = [];
+    const yearlyData = [];
+    let currentYearData = null;
+
+    for (let q = 0; q <= 20; q++) {
+      const absYear = currentYear + Math.floor((currentQuarter + q) / 4);
+      const absQ = (currentQuarter + q) % 4;
+      const label = `Q${absQ + 1} ${absYear}`;
+
+      let liquidTotal = 0;
+      let unvestedTotal = 0;
+
+      holdings.forEach(h => {
+        const grownValue = h.value * Math.pow(1 + quarterlyRate, q);
+        // Check if this holding has vested by quarter q
+        const isVestedByQ = h.vested || (h.vestQuarterOffset >= 0 && q >= h.vestQuarterOffset);
+
+        if (isVestedByQ) {
+          liquidTotal += grownValue;
+        } else {
+          unvestedTotal += grownValue;
+        }
+      });
+
+      labels.push(label);
+      liquidSeries.push(liquidTotal);
+      withUnvestedSeries.push(liquidTotal + unvestedTotal);
+
+      // Track yearly data
+      if (!currentYearData || currentYearData.year !== absYear) {
+        if (currentYearData) yearlyData.push(currentYearData);
+        currentYearData = { year: absYear, quarters: [null, null, null, null] };
+      }
+      currentYearData.quarters[absQ] = includeUnvested
+        ? liquidTotal + unvestedTotal
+        : liquidTotal;
+    }
+
+    if (currentYearData) yearlyData.push(currentYearData);
+
+    return { labels, liquid: liquidSeries, withUnvested: withUnvestedSeries, yearlyData };
+  },
+
+  /**
+   * Render the projection line chart
+   * @param {{labels: string[], liquid: number[], withUnvested: number[]}} data
+   */
+  renderProjectionChart(data) {
+    const ctx = Utils.$('projection-chart').getContext('2d');
+    const includeUnvested = Utils.$('include-unvested').checked;
+
+    if (this.charts.projection) {
+      this.charts.projection.destroy();
+    }
+
+    const datasets = [
+      {
+        label: 'Liquid Value (EUR)',
+        data: data.liquid,
+        borderColor: '#10b981',
+        backgroundColor: 'rgba(16, 185, 129, 0.08)',
+        fill: true,
+        tension: 0.3,
+        pointRadius: 3,
+        pointHoverRadius: 6,
+        pointBackgroundColor: '#10b981',
+        borderWidth: 2
+      }
+    ];
+
+    if (includeUnvested) {
+      datasets.push({
+        label: 'With Unvested (EUR)',
+        data: data.withUnvested,
+        borderColor: '#f59e0b',
+        backgroundColor: 'rgba(245, 158, 11, 0.06)',
+        fill: true,
+        tension: 0.3,
+        pointRadius: 3,
+        pointHoverRadius: 6,
+        pointBackgroundColor: '#f59e0b',
+        borderWidth: 2,
+        borderDash: [6, 3]
+      });
+    }
+
+    // Add a "Today" annotation via a vertical marker at index 0
+    this.charts.projection = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: data.labels,
+        datasets: datasets
+      },
+      options: {
+        responsive: true,
+        interaction: {
+          mode: 'index',
+          intersect: false
+        },
+        plugins: {
+          legend: {
+            display: includeUnvested,
+            labels: {
+              color: '#94a3b8',
+              font: { family: 'Inter, sans-serif' },
+              padding: 16
+            }
+          },
+          tooltip: {
+            callbacks: {
+              label: (context) => `${context.dataset.label}: ${Utils.formatCurrency(context.raw, 'EUR')}`
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: false,
+            grid: { color: 'rgba(148, 163, 184, 0.1)' },
+            ticks: {
+              color: '#64748b',
+              font: { family: 'Inter, sans-serif' },
+              callback: value => Utils.formatCurrency(value, 'EUR')
+            }
+          },
+          x: {
+            grid: { color: 'rgba(148, 163, 184, 0.05)' },
+            ticks: {
+              color: '#64748b',
+              font: { family: 'Inter, sans-serif' },
+              maxRotation: 45,
+              maxTicksLimit: 10
+            }
+          }
+        }
+      }
+    });
+  },
+
+  /**
+   * Render the projection summary table (Year x Quarter grid)
+   * @param {{yearlyData: Array}} data
+   */
+  renderProjectionTable(data) {
+    const tbody = Utils.$('projection-table-body');
+    const yearlyData = data.yearlyData;
+
+    if (yearlyData.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-muted);">No data</td></tr>';
+      return;
+    }
+
+    const rows = yearlyData.map((yd, idx) => {
+      const qCells = yd.quarters.map(val =>
+        `<td style="text-align: right;">${val !== null ? Utils.formatCurrency(val, 'EUR') : '-'}</td>`
+      ).join('');
+
+      // Year-end = last non-null quarter value
+      const yearEnd = [...yd.quarters].reverse().find(v => v !== null);
+
+      // YoY growth: compare to previous year's year-end
+      let yoyPct = '-';
+      if (idx > 0) {
+        const prevYd = yearlyData[idx - 1];
+        const prevEnd = [...prevYd.quarters].reverse().find(v => v !== null);
+        if (prevEnd && prevEnd > 0 && yearEnd) {
+          const pct = ((yearEnd - prevEnd) / prevEnd * 100).toFixed(1);
+          const isPositive = yearEnd >= prevEnd;
+          yoyPct = `<span style="color: ${isPositive ? 'var(--success-color)' : 'var(--danger-color)'}">
+            ${isPositive ? '+' : ''}${pct}%
+          </span>`;
+        }
+      } else {
+        yoyPct = '<span style="color: var(--text-muted);">baseline</span>';
+      }
+
+      return `<tr>
+        <td><strong>${yd.year}</strong></td>
+        ${qCells}
+        <td style="text-align: right; font-weight: 600;">${yearEnd !== null && yearEnd !== undefined ? Utils.formatCurrency(yearEnd, 'EUR') : '-'}</td>
+        <td style="text-align: right;">${yoyPct}</td>
+      </tr>`;
+    }).join('');
+
+    tbody.innerHTML = rows;
   }
 };
