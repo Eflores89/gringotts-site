@@ -12,6 +12,8 @@ const notion = new Client({
 // Database IDs from environment
 const DATABASE_ID = process.env.SPENDING_DATABASE_ID;
 const CATEGORIES_DATABASE_ID = process.env.CATEGORIES_DATABASE_ID;
+const INVESTMENTS_DATABASE_ID = process.env.INVESTMENTS_DATABASE_ID;
+const ALLOCATIONS_DATABASE_ID = process.env.ALLOCATIONS_DATABASE_ID;
 
 // CORS headers for API Gateway
 const CORS_HEADERS = {
@@ -118,6 +120,50 @@ function extractPageData(page) {
   };
 }
 
+/**
+ * Extract investment data from Notion response
+ * @param {object} page - Notion page object
+ * @returns {object} Simplified investment data
+ */
+function extractInvestmentData(page) {
+  const props = page.properties;
+
+  return {
+    id: page.id,
+    url: page.url,
+    name: getTitle(props.name),
+    ticker: getRichText(props.ticker),
+    quantity: getNumber(props.quantity),
+    purchase_price: getNumber(props.purchase_price),
+    purchase_date: getDate(props.purchase_date),
+    current_price: getNumber(props.current_price),
+    currency: getSelect(props.currency),
+    asset_type: getSelect(props.asset_type),
+    vest_date: getDate(props.vest_date),
+    last_price_update: getDate(props.last_price_update),
+    notes: getRichText(props.notes),
+    created_time: page.created_time
+  };
+}
+
+/**
+ * Extract allocation data from Notion response
+ * @param {object} page - Notion page object
+ * @returns {object} Simplified allocation data
+ */
+function extractAllocationData(page) {
+  const props = page.properties;
+
+  return {
+    id: page.id,
+    name: getTitle(props.name),
+    investment: getRelation(props.investment),
+    allocation_type: getSelect(props.allocation_type),
+    category: getSelect(props.category),
+    percentage: getNumber(props.percentage)
+  };
+}
+
 // Property extractors
 function getTitle(prop) {
   return prop?.title?.[0]?.text?.content || '';
@@ -182,10 +228,21 @@ module.exports = {
   notion,
   DATABASE_ID,
   CATEGORIES_DATABASE_ID,
+  INVESTMENTS_DATABASE_ID,
+  ALLOCATIONS_DATABASE_ID,
   CORS_HEADERS,
   success,
   error,
   sleep,
   withRetry,
-  extractPageData
+  extractPageData,
+  extractInvestmentData,
+  extractAllocationData,
+  getTitle,
+  getNumber,
+  getSelect,
+  getDate,
+  getRichText,
+  getRelation,
+  getRollup
 };
