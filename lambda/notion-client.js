@@ -142,6 +142,7 @@ function extractInvestmentData(page) {
     vest_date: getDate(props.vest_date),
     last_price_update: getDate(props.last_price_update),
     notes: getRichText(props.notes),
+    annual_growth_rate: getNumber(props.annual_growth_rate),
     created_time: page.created_time
   };
 }

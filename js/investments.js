@@ -6,6 +6,7 @@ const Investments = {
   investments: [],
   allocations: [],
   fxRates: { ...CONFIG.FX_RATES },
+  growthRates: {}, // { investmentId -> annual % }
   charts: {},
 
   /**
@@ -48,11 +49,21 @@ const Investments = {
       });
     });
 
-    // Projection controls
+    // Projection controls - "Set All" global slider
     const slider = Utils.$('growth-rate-slider');
     const valueLabel = Utils.$('growth-rate-value');
     slider.addEventListener('input', () => {
-      valueLabel.textContent = `${parseFloat(slider.value).toFixed(1)}%`;
+      const rate = parseFloat(slider.value);
+      valueLabel.textContent = `${rate.toFixed(1)}%`;
+      // Update all per-investment growth rates
+      this.investments.forEach(inv => {
+        this.growthRates[inv.id] = rate;
+      });
+      // Sync inline sliders in the table
+      document.querySelectorAll('.inv-growth-slider').forEach(el => {
+        el.value = rate;
+        el.nextElementSibling.textContent = `${rate.toFixed(1)}%`;
+      });
       this.renderProjection();
     });
 
@@ -109,6 +120,12 @@ const Investments = {
 
       this.investments = investmentsRes.investments || [];
       this.allocations = allocationsRes.allocations || [];
+
+      // Initialize per-investment growth rates from Notion data
+      const defaultRate = parseFloat(Utils.$('growth-rate-slider').value);
+      this.investments.forEach(inv => {
+        this.growthRates[inv.id] = inv.annual_growth_rate != null ? inv.annual_growth_rate : defaultRate;
+      });
 
       Utils.hide('loading-state');
 
@@ -241,6 +258,8 @@ const Investments = {
       const ticker = inv.ticker ? ` (${inv.ticker})` : '';
       const assetType = inv.asset_type || '-';
 
+      const growthRate = this.growthRates[inv.id] != null ? this.growthRates[inv.id] : 7;
+
       return `<tr>
         <td>${inv.name}${ticker}</td>
         <td><span class="badge badge-info">${assetType}</span></td>
@@ -256,10 +275,26 @@ const Investments = {
         <td>${vested
           ? '<span class="badge badge-success">Liquid</span>'
           : '<span class="badge badge-warning">Unvested</span>'}</td>
+        <td class="growth-slider-cell">
+          <input type="range" class="inv-growth-slider" data-inv-id="${inv.id}"
+            min="0" max="20" step="0.5" value="${growthRate}">
+          <span class="inv-growth-value">${growthRate.toFixed(1)}%</span>
+        </td>
       </tr>`;
     }).join('');
 
     tbody.innerHTML = rows;
+
+    // Attach per-investment growth slider listeners
+    tbody.querySelectorAll('.inv-growth-slider').forEach(slider => {
+      slider.addEventListener('input', () => {
+        const rate = parseFloat(slider.value);
+        const invId = slider.dataset.invId;
+        this.growthRates[invId] = rate;
+        slider.nextElementSibling.textContent = `${rate.toFixed(1)}%`;
+        this.renderProjection();
+      });
+    });
 
     // Update footer totals
     Utils.$('total-value').textContent = Utils.formatCurrency(totalValue, 'EUR');
@@ -667,25 +702,28 @@ const Investments = {
    * @returns {{labels: string[], liquid: number[], withUnvested: number[], yearlyData: Array}}
    */
   calculateProjection() {
-    const annualRate = parseFloat(Utils.$('growth-rate-slider').value) / 100;
-    const quarterlyRate = Math.pow(1 + annualRate, 0.25) - 1;
     const includeUnvested = Utils.$('include-unvested').checked;
 
     const now = new Date();
     const currentYear = now.getFullYear();
     const currentQuarter = Math.floor(now.getMonth() / 3); // 0-based
 
-    // Build individual investment tracking with vesting info
-    const holdings = this.investments.map(inv => ({
-      value: this.getEuroValue(inv),
-      vested: this.isVested(inv),
-      vestQuarterOffset: inv.vest_date ? (() => {
-        const vd = new Date(inv.vest_date);
-        const yDiff = vd.getFullYear() - currentYear;
-        const qDiff = Math.floor(vd.getMonth() / 3) - currentQuarter;
-        return yDiff * 4 + qDiff;
-      })() : -1 // -1 means already vested or no vest date
-    }));
+    // Build individual investment tracking with per-investment growth rates
+    const holdings = this.investments.map(inv => {
+      const annualRate = (this.growthRates[inv.id] != null ? this.growthRates[inv.id] : 7) / 100;
+      const quarterlyRate = Math.pow(1 + annualRate, 0.25) - 1;
+      return {
+        value: this.getEuroValue(inv),
+        quarterlyRate,
+        vested: this.isVested(inv),
+        vestQuarterOffset: inv.vest_date ? (() => {
+          const vd = new Date(inv.vest_date);
+          const yDiff = vd.getFullYear() - currentYear;
+          const qDiff = Math.floor(vd.getMonth() / 3) - currentQuarter;
+          return yDiff * 4 + qDiff;
+        })() : -1 // -1 means already vested or no vest date
+      };
+    });
 
     const labels = [];
     const liquidSeries = [];
@@ -702,7 +740,7 @@ const Investments = {
       let unvestedTotal = 0;
 
       holdings.forEach(h => {
-        const grownValue = h.value * Math.pow(1 + quarterlyRate, q);
+        const grownValue = h.value * Math.pow(1 + h.quarterlyRate, q);
         // Check if this holding has vested by quarter q
         const isVestedByQ = h.vested || (h.vestQuarterOffset >= 0 && q >= h.vestQuarterOffset);
 

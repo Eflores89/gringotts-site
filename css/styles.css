@@ -1135,6 +1135,57 @@ tr.uncategorized td:first-child {
   color: var(--accent-primary);
 }
 
+/* Inline Growth Slider in Portfolio Table */
+.growth-slider-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 140px;
+}
+
+.growth-slider-cell .inv-growth-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 80px;
+  height: 4px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  outline: none;
+  cursor: pointer;
+}
+
+.growth-slider-cell .inv-growth-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent-primary);
+  border: 2px solid var(--bg-primary);
+  box-shadow: 0 0 4px rgba(16, 185, 129, 0.3);
+  cursor: pointer;
+}
+
+.growth-slider-cell .inv-growth-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent-primary);
+  border: 2px solid var(--bg-primary);
+  box-shadow: 0 0 4px rgba(16, 185, 129, 0.3);
+  cursor: pointer;
+}
+
+.growth-slider-cell .inv-growth-value {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--accent-primary);
+  min-width: 40px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
 /* Projection Table Styling */
 #projection-table tbody tr:last-child {
   border-bottom: 2px solid var(--border-accent);
