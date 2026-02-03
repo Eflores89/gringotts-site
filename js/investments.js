@@ -275,10 +275,12 @@ const Investments = {
         <td>${vested
           ? '<span class="badge badge-success">Liquid</span>'
           : '<span class="badge badge-warning">Unvested</span>'}</td>
-        <td class="growth-slider-cell">
-          <input type="range" class="inv-growth-slider" data-inv-id="${inv.id}"
-            min="0" max="20" step="0.5" value="${growthRate}">
-          <span class="inv-growth-value">${growthRate.toFixed(1)}%</span>
+        <td>
+          <div class="growth-slider-cell">
+            <input type="range" class="inv-growth-slider" data-inv-id="${inv.id}"
+              min="0" max="20" step="0.5" value="${growthRate}">
+            <span class="inv-growth-value">${growthRate.toFixed(1)}%</span>
+          </div>
         </td>
       </tr>`;
     }).join('');
