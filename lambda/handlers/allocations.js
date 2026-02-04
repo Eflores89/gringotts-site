@@ -32,6 +32,8 @@ async function createAllocation(event) {
     }
 
     // Build Notion properties
+    // The percentage property uses Notion's 'percent' format, which expects
+    // values as decimals (e.g. 0.5 for 50%). Convert from whole numbers (0-100).
     const properties = {
       name: {
         title: [{ text: { content: `${data.category} (${data.allocation_type})` } }]
@@ -41,7 +43,7 @@ async function createAllocation(event) {
       },
       allocation_type: { select: { name: data.allocation_type } },
       category: { select: { name: data.category } },
-      percentage: { number: data.percentage }
+      percentage: { number: data.percentage / 100 }
     };
 
     // Create the page

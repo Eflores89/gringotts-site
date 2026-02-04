@@ -460,8 +460,10 @@ const Investments = {
       const weight = invValue / totalValue;
 
       // Find allocations for this investment matching the type
+      // Use case-insensitive comparison for allocation_type to handle
+      // Notion select values with different casing than radio button values
       const invAllocations = this.allocations.filter(a =>
-        a.allocation_type === type &&
+        a.allocation_type && a.allocation_type.toLowerCase() === type &&
         a.investment && a.investment.includes(inv.id)
       );
 
