@@ -96,8 +96,14 @@
   <script src="js/add-cash.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      if (!Auth.requireAuth()) return;
-      Auth.initLogoutButton();
+      // This page works without authentication
+      if (Auth.isAuthenticated()) {
+        Auth.initLogoutButton();
+      } else {
+        // Hide logout button and other nav links that require auth
+        const logoutBtn = document.getElementById('logout-btn');
+        if (logoutBtn) logoutBtn.style.display = 'none';
+      }
       AddCash.init();
     });
   </script>
