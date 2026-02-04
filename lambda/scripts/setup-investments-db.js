@@ -97,7 +97,8 @@ async function createAllocationsDatabase(investmentsDatabaseId) {
         select: {
           options: [
             { name: 'industry', color: 'blue' },
-            { name: 'geography', color: 'green' }
+            { name: 'geography', color: 'green' },
+            { name: 'fund', color: 'yellow' }
           ]
         }
       },
