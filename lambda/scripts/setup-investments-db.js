@@ -87,7 +87,7 @@ async function createAllocationsDatabase(investmentsDatabaseId) {
       name: {
         title: {}
       },
-      investment: {
+      investments: {
         relation: {
           database_id: investmentsDatabaseId,
           single_property: {}

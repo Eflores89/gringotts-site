@@ -155,18 +155,13 @@ function extractInvestmentData(page) {
 function extractAllocationData(page) {
   const props = page.properties;
 
-  // The percentage property uses Notion's 'percent' format, which stores
-  // values as decimals (e.g. 0.5 for 50%). Convert to whole numbers (0-100).
-  const rawPct = getNumber(props.percentage);
-  const percentage = rawPct != null ? rawPct * 100 : null;
-
   return {
     id: page.id,
     name: getTitle(props.name),
-    investment: getRelation(props.investment),
+    investment: getRelation(props.investments),
     allocation_type: getSelect(props.allocation_type),
     category: getSelect(props.category),
-    percentage
+    percentage: getNumber(props.percentage)
   };
 }
 
