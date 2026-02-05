@@ -401,7 +401,7 @@ const Review = {
           legend: {
             position: 'top',
             labels: {
-              color: '#94a3b8',
+              color: '#ffffff',
               font: { family: 'Inter, sans-serif' },
               padding: 20
             }
@@ -559,7 +559,7 @@ const Review = {
           legend: {
             position: 'top',
             labels: {
-              color: '#94a3b8',
+              color: '#ffffff',
               font: { family: 'Inter, sans-serif' },
               padding: 16,
               boxWidth: 12

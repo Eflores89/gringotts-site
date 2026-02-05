@@ -417,7 +417,7 @@ const Investments = {
           legend: {
             position: 'right',
             labels: {
-              color: '#94a3b8',
+              color: '#ffffff',
               font: { family: 'Inter, sans-serif' },
               padding: 16,
               generateLabels: (chart) => {
@@ -536,7 +536,7 @@ const Investments = {
           legend: {
             position: 'right',
             labels: {
-              color: '#94a3b8',
+              color: '#ffffff',
               font: { family: 'Inter, sans-serif' },
               padding: 14,
               generateLabels: (chart) => {
@@ -834,7 +834,7 @@ const Investments = {
           legend: {
             display: includeUnvested,
             labels: {
-              color: '#94a3b8',
+              color: '#ffffff',
               font: { family: 'Inter, sans-serif' },
               padding: 16
             }
