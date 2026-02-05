@@ -158,7 +158,7 @@ function extractAllocationData(page) {
   return {
     id: page.id,
     name: getTitle(props.name),
-    investment: getRelation(props.investments),
+    investments: getRelations(props.investments),
     allocation_type: getSelect(props.allocation_type),
     category: getSelect(props.category),
     percentage: getNumber(props.percentage)
@@ -189,6 +189,12 @@ function getRichText(prop) {
 function getRelation(prop) {
   // Return first related page ID or null
   return prop?.relation?.[0]?.id || null;
+}
+
+function getRelations(prop) {
+  // Return all related page IDs as an array
+  if (!prop?.relation || !Array.isArray(prop.relation)) return [];
+  return prop.relation.map(r => r.id).filter(Boolean);
 }
 
 function getRollup(prop) {
