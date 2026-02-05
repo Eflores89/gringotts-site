@@ -462,10 +462,10 @@ const Investments = {
       // Find allocations for this investment matching the type
       // Use case-insensitive comparison for allocation_type to handle
       // Notion select values with different casing than radio button values
-      // Note: a.investment is a single ID string (from getRelation), not an array
+      // a.investments is an array of investment IDs (from getRelations)
       const invAllocations = this.allocations.filter(a =>
         a.allocation_type && a.allocation_type.toLowerCase() === type &&
-        a.investment && a.investment === inv.id
+        a.investments && a.investments.includes(inv.id)
       );
 
       if (invAllocations.length === 0) {
