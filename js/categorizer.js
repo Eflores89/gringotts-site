@@ -1,22 +1,28 @@
 /**
  * Gringotts Spending Tracker - Auto-Categorization Engine
- * Matches merchant descriptions to categories using rules from CSV
+ * Two-tier matching: merchant patterns and Spendee categories, both resolving to spend_id
  */
 
+const STORAGE_KEYS = {
+  MERCHANT: 'gringotts_merchant_rules',
+  SPENDEE: 'gringotts_spendee_rules'
+};
+
 const Categorizer = {
-  rules: [],
+  merchantRules: [],
   spendeeMap: [],
   loaded: false,
+  // Track rules added this session for UI feedback
+  sessionMerchantRules: [],
+  sessionSpendeeRules: [],
 
   /**
-   * Load categorization rules from CSV files
-   * @returns {Promise<void>}
+   * Load categorization rules from CSV files + localStorage
    */
   async loadRules() {
     if (this.loaded) return;
 
     try {
-      // Load both CSVs in parallel
       const [merchantResp, spendeeResp] = await Promise.all([
         fetch('data/merchant-categories.csv').catch(() => null),
         fetch('data/spendee-category-map.csv').catch(() => null)
@@ -24,90 +30,52 @@ const Categorizer = {
 
       if (merchantResp && merchantResp.ok) {
         const csv = await merchantResp.text();
-        this.rules = this.parseCSV(csv);
-        console.log(`Loaded ${this.rules.length} merchant categorization rules`);
-      } else {
-        console.warn('Could not load merchant-categories.csv, using empty rules');
-        this.rules = [];
+        this.merchantRules = this.parseCSV(csv);
       }
 
       if (spendeeResp && spendeeResp.ok) {
         const csv = await spendeeResp.text();
-        this.spendeeMap = this.parseSpendeeMap(csv);
-        console.log(`Loaded ${this.spendeeMap.length} spendee category mappings`);
-      } else {
-        console.warn('Could not load spendee-category-map.csv');
-        this.spendeeMap = [];
+        this.spendeeMap = this.parseCSV(csv);
       }
 
+      // Merge saved rules from localStorage
+      this.loadSavedRules();
+
       this.loaded = true;
+      console.log(`Loaded ${this.merchantRules.length} merchant rules, ${this.spendeeMap.length} spendee rules`);
     } catch (error) {
       console.error('Failed to load categorization rules:', error);
-      this.rules = [];
+      this.merchantRules = [];
       this.spendeeMap = [];
       this.loaded = true;
     }
   },
 
   /**
-   * Parse spendee-category-map CSV into lookup array
-   * @param {string} csv - CSV content (spendee_category,spend_id)
-   * @returns {Array} - Parsed mappings
+   * Parse a 2-column CSV (key,spend_id) into array of {key, spend_id}
    */
-  parseSpendeeMap(csv) {
+  parseCSV(csv) {
     const lines = csv.trim().split('\n');
     if (lines.length < 2) return [];
 
-    const mappings = [];
+    const entries = [];
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i].trim();
       if (!line || line.startsWith('#')) continue;
 
       const values = this.parseCSVLine(line);
       if (values.length >= 2 && values[0] && values[1]) {
-        mappings.push({
-          spendee_category: values[0].trim(),
+        entries.push({
+          key: values[0].trim(),
           spend_id: values[1].trim()
         });
       }
     }
-    return mappings;
-  },
-
-  /**
-   * Parse CSV content into rules array
-   * @param {string} csv - CSV content
-   * @returns {Array} - Parsed rules
-   */
-  parseCSV(csv) {
-    const lines = csv.trim().split('\n');
-    if (lines.length < 2) return []; // Need at least header + 1 rule
-
-    const rules = [];
-
-    // Skip header line
-    for (let i = 1; i < lines.length; i++) {
-      const line = lines[i].trim();
-      if (!line || line.startsWith('#')) continue; // Skip empty lines and comments
-
-      // Parse CSV line (handle commas in quoted strings)
-      const values = this.parseCSVLine(line);
-
-      if (values.length >= 2 && values[0] && values[1]) {
-        rules.push({
-          pattern: values[0].toLowerCase().trim(),
-          category: values[1].trim()
-        });
-      }
-    }
-
-    return rules;
+    return entries;
   },
 
   /**
    * Parse a single CSV line (handles quoted values)
-   * @param {string} line - CSV line
-   * @returns {Array} - Parsed values
    */
   parseCSVLine(line) {
     const values = [];
@@ -116,7 +84,6 @@ const Categorizer = {
 
     for (let i = 0; i < line.length; i++) {
       const char = line[i];
-
       if (char === '"') {
         inQuotes = !inQuotes;
       } else if (char === ',' && !inQuotes) {
@@ -126,116 +93,171 @@ const Categorizer = {
         current += char;
       }
     }
-
-    // Don't forget the last value
     values.push(current.trim());
-
     return values;
   },
 
   /**
-   * Categorize a single transaction
-   * @param {object} transaction - Transaction to categorize
-   * @returns {object} - Categorization result
+   * Load saved rules from localStorage and merge with CSV rules
    */
-  categorize(transaction) {
-    const description = (transaction.transaction || '').toLowerCase();
+  loadSavedRules() {
+    try {
+      const savedMerchant = JSON.parse(localStorage.getItem(STORAGE_KEYS.MERCHANT) || '[]');
+      const savedSpendee = JSON.parse(localStorage.getItem(STORAGE_KEYS.SPENDEE) || '[]');
 
-    // Try to match against rules
-    for (const rule of this.rules) {
-      if (description.includes(rule.pattern)) {
-        return {
-          category: rule.category,
-          matched_rule: rule.pattern,
-          auto_categorized: true
-        };
-      }
+      // Merge saved rules (they take priority — appended after CSV rules,
+      // but since we match first-found, we prepend so saved overrides CSV)
+      this.merchantRules = [...savedMerchant, ...this.merchantRules];
+      this.spendeeMap = [...savedSpendee, ...this.spendeeMap];
+    } catch (e) {
+      console.warn('Could not load saved rules from localStorage:', e);
     }
-
-    // No merchant match found — Tier 2 (spendee category map) is handled in categorizeAll()
-    return {
-      category: null,
-      matched_rule: null,
-      auto_categorized: false
-    };
   },
 
   /**
-   * Categorize all transactions using 3-tier matching:
-   * Tier 1: Merchant pattern (description text match)
-   * Tier 2: Spendee category → spend_id mapping
-   * Tier 3: Manual review (no match)
-   * @param {Array} transactions - Transactions to categorize
-   * @param {Array} categoriesList - List of category objects with id, spend_name, spend_id
-   * @returns {Array} - Transactions with categories applied
+   * Save a new merchant rule (description pattern → spend_id)
+   */
+  saveMerchantRule(pattern, spend_id) {
+    const rule = { key: pattern.toLowerCase().trim(), spend_id: spend_id.trim() };
+
+    // Add to active rules (prepend so it takes priority)
+    this.merchantRules.unshift(rule);
+    this.sessionMerchantRules.push(rule);
+
+    // Persist to localStorage
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEYS.MERCHANT) || '[]');
+    // Avoid duplicates
+    const exists = saved.findIndex(r => r.key === rule.key);
+    if (exists >= 0) {
+      saved[exists] = rule;
+    } else {
+      saved.push(rule);
+    }
+    localStorage.setItem(STORAGE_KEYS.MERCHANT, JSON.stringify(saved));
+  },
+
+  /**
+   * Save a new spendee category rule (spendee_category → spend_id)
+   */
+  saveSpendeeRule(spendee_category, spend_id) {
+    const rule = { key: spendee_category.trim(), spend_id: spend_id.trim() };
+
+    this.spendeeMap.unshift(rule);
+    this.sessionSpendeeRules.push(rule);
+
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEYS.SPENDEE) || '[]');
+    const exists = saved.findIndex(r => r.key === rule.key);
+    if (exists >= 0) {
+      saved[exists] = rule;
+    } else {
+      saved.push(rule);
+    }
+    localStorage.setItem(STORAGE_KEYS.SPENDEE, JSON.stringify(saved));
+  },
+
+  /**
+   * Find category info from spend_id using the categories list
+   */
+  resolveSpendId(spend_id, categoriesList) {
+    if (!spend_id || !categoriesList.length) return null;
+    return categoriesList.find(c => c.spend_id === spend_id) || null;
+  },
+
+  /**
+   * Categorize all transactions using 2-tier matching:
+   * Tier 1: Merchant pattern (description → spend_id)
+   * Tier 2: Spendee category (spendee_category → spend_id)
    */
   categorizeAll(transactions, categoriesList = []) {
     return transactions.map(tx => {
-      const result = this.categorize(tx);
+      const description = (tx.transaction || '').toLowerCase();
+      const spendeeCategory = tx.spendee_category || '';
 
-      let category_id = null;
-      let matched_rule = result.matched_rule;
-      let category = result.category;
-      let auto_categorized = result.auto_categorized;
+      let spend_id = null;
+      let matched_rule = null;
+      let match_tier = null;
 
-      // Tier 1: Look up category_id by spend_name (from merchant pattern match)
-      if (category && categoriesList.length > 0) {
-        const matched = categoriesList.find(c =>
-          c.spend_name.toLowerCase() === category.toLowerCase()
-        );
-        if (matched) {
-          category_id = matched.id;
+      // Tier 1: Merchant pattern match
+      for (const rule of this.merchantRules) {
+        if (description.includes(rule.key.toLowerCase())) {
+          spend_id = rule.spend_id;
+          matched_rule = rule.key;
+          match_tier = 'merchant';
+          break;
         }
       }
 
-      // Tier 2: If no match yet, try spendee category → spend_id mapping
-      if (!category_id && tx.spendee_category && this.spendeeMap.length > 0 && categoriesList.length > 0) {
-        const spendeeMapping = this.spendeeMap.find(m =>
-          m.spendee_category.toLowerCase() === tx.spendee_category.toLowerCase()
-        );
-        if (spendeeMapping) {
-          const matched = categoriesList.find(c =>
-            c.spend_id === spendeeMapping.spend_id
-          );
-          if (matched) {
-            category_id = matched.id;
-            category = matched.spend_name;
-            matched_rule = `spendee:${tx.spendee_category}`;
-            auto_categorized = true;
+      // Tier 2: Spendee category match
+      if (!spend_id && spendeeCategory && spendeeCategory !== 'all-nonspec' && spendeeCategory !== 'General') {
+        for (const rule of this.spendeeMap) {
+          if (rule.key.toLowerCase() === spendeeCategory.toLowerCase()) {
+            spend_id = rule.spend_id;
+            matched_rule = rule.key;
+            match_tier = 'spendee';
+            break;
           }
+        }
+      }
+
+      // Resolve spend_id → category_id
+      let category_id = null;
+      let category = null;
+      if (spend_id) {
+        const resolved = this.resolveSpendId(spend_id, categoriesList);
+        if (resolved) {
+          category_id = resolved.id;
+          category = resolved.spend_name;
         }
       }
 
       return {
         ...tx,
+        spend_id: spend_id,
         category: category,
         category_id: category_id,
         matched_rule: matched_rule,
-        auto_categorized: auto_categorized && category_id !== null
+        match_tier: match_tier,
+        auto_categorized: category_id !== null && match_tier !== null
       };
     });
   },
 
   /**
-   * Get list of unique categories from rules
-   * @returns {Array} - Category names
+   * Export merged merchant rules as CSV string
    */
-  getCategoriesFromRules() {
-    const categories = new Set();
-    this.rules.forEach(rule => categories.add(rule.category));
-    return Array.from(categories).sort();
+  exportMerchantCSV() {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEYS.MERCHANT) || '[]');
+    if (saved.length === 0) return null;
+
+    let csv = '# New merchant rules (merge into merchant-categories.csv)\n';
+    csv += 'merchant_pattern,spend_id\n';
+    saved.forEach(r => {
+      csv += `${r.key},${r.spend_id}\n`;
+    });
+    return csv;
   },
 
   /**
-   * Add a new rule dynamically (for learning from user corrections)
-   * Note: This doesn't persist to the CSV file
-   * @param {string} pattern - Merchant pattern
-   * @param {string} category - Category name
+   * Export merged spendee rules as CSV string
    */
-  addRule(pattern, category) {
-    this.rules.push({
-      pattern: pattern.toLowerCase().trim(),
-      category: category.trim()
+  exportSpendeeCSV() {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEYS.SPENDEE) || '[]');
+    if (saved.length === 0) return null;
+
+    let csv = '# New spendee rules (merge into spendee-category-map.csv)\n';
+    csv += 'spendee_category,spend_id\n';
+    saved.forEach(r => {
+      csv += `${r.key},${r.spend_id}\n`;
     });
+    return csv;
+  },
+
+  /**
+   * Get count of saved (localStorage) rules
+   */
+  getSavedRuleCounts() {
+    const merchant = JSON.parse(localStorage.getItem(STORAGE_KEYS.MERCHANT) || '[]');
+    const spendee = JSON.parse(localStorage.getItem(STORAGE_KEYS.SPENDEE) || '[]');
+    return { merchant: merchant.length, spendee: spendee.length };
   }
 };

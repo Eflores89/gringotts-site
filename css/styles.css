@@ -656,6 +656,83 @@ tbody tr:hover {
   color: #a855f7;
 }
 
+/* Save rule buttons */
+.btn-save-rule {
+  padding: 2px 8px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-default);
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--transition-base);
+}
+
+.btn-save-rule:hover:not(:disabled) {
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
+
+.btn-save-rule:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.btn-save-rule.saved {
+  background: var(--success-bg);
+  color: var(--success-color);
+  border-color: var(--success-color);
+}
+
+.actions-cell {
+  white-space: nowrap;
+}
+
+.actions-cell .btn-save-rule {
+  margin-right: 4px;
+}
+
+/* Skipped row */
+tr.skipped td {
+  opacity: 0.4;
+  text-decoration: line-through;
+}
+
+tr.skipped td:last-child,
+tr.skipped td:nth-last-child(2) {
+  text-decoration: none;
+  opacity: 0.6;
+}
+
+.btn-skip {
+  padding: 2px 8px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-default);
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--transition-base);
+}
+
+.btn-skip:hover {
+  border-color: var(--danger-color);
+  color: var(--danger-color);
+}
+
+.btn-skip.skipped {
+  background: var(--danger-bg);
+  color: var(--danger-color);
+  border-color: var(--danger-color);
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+}
+
 /* File Upload */
 .file-upload {
   border: 2px dashed var(--border-default);

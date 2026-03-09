@@ -12,24 +12,18 @@ const CleanSpending = {
    * Initialize the Clean Spending page
    */
   async init() {
-    // Populate month/year dropdowns
     this.populateDateDropdowns();
-
-    // Set default FX rate
     Utils.$('fx-rate').value = this.fxRate;
 
-    // Load categorization rules
     await Categorizer.loadRules();
-
-    // Load categories from API
     await this.loadCategories();
 
-    // Setup event handlers
     this.setupFileUpload();
     this.setupParseButton();
     this.setupReviewControls();
     this.setupUploadButton();
     this.setupStartOver();
+    this.setupDownloadRules();
   },
 
   /**
@@ -39,7 +33,6 @@ const CleanSpending = {
     const monthSelect = Utils.$('upload-month');
     const yearSelect = Utils.$('upload-year');
 
-    // Months
     CONFIG.MONTHS.forEach((name, i) => {
       const opt = document.createElement('option');
       opt.value = i + 1;
@@ -48,7 +41,6 @@ const CleanSpending = {
       monthSelect.appendChild(opt);
     });
 
-    // Years (current year and 2 years back)
     const currentYear = Utils.getCurrentYear();
     for (let y = currentYear; y >= currentYear - 2; y--) {
       const opt = document.createElement('option');
@@ -68,9 +60,16 @@ const CleanSpending = {
       this.categories = response.categories || [];
     } catch (error) {
       console.error('Failed to load categories:', error);
-      // Use categories from rules as fallback
-      this.categories = Categorizer.getCategoriesFromRules();
+      this.categories = [];
     }
+  },
+
+  /**
+   * Find spend_id for a given category_id
+   */
+  getSpendIdForCategoryId(category_id) {
+    const cat = this.categories.find(c => c.id === category_id);
+    return cat ? cat.spend_id : null;
   },
 
   /**
@@ -80,15 +79,12 @@ const CleanSpending = {
     const dropZone = Utils.$('file-upload');
     const fileInput = Utils.$('file-input');
 
-    // Click to open file dialog
     dropZone.addEventListener('click', () => fileInput.click());
 
-    // File input change
     fileInput.addEventListener('change', (e) => {
       this.handleFiles(e.target.files);
     });
 
-    // Drag and drop
     dropZone.addEventListener('dragover', (e) => {
       e.preventDefault();
       dropZone.classList.add('dragover');
@@ -107,7 +103,6 @@ const CleanSpending = {
 
   /**
    * Handle selected files
-   * @param {FileList} fileList - Selected files
    */
   handleFiles(fileList) {
     this.files = Array.from(fileList).filter(f =>
@@ -119,7 +114,6 @@ const CleanSpending = {
     const parseBtn = Utils.$('parse-btn');
 
     if (this.files.length > 0) {
-      // Show file list
       Utils.show(listContainer);
       listItems.innerHTML = this.files
         .map(f => `<li>${f.name} (${(f.size / 1024).toFixed(1)} KB)</li>`)
@@ -143,13 +137,8 @@ const CleanSpending = {
       Utils.setButtonLoading(parseBtn, true, 'Parsing...');
 
       try {
-        // Parse files
         this.transactions = await XLSXParser.parseFiles(this.files);
-
-        // Auto-categorize (pass categories list for ID lookup)
         this.transactions = Categorizer.categorizeAll(this.transactions, this.categories);
-
-        // Show review step
         this.showReviewStep();
       } catch (error) {
         console.error('Failed to parse files:', error);
@@ -168,16 +157,13 @@ const CleanSpending = {
     Utils.hide('step-upload');
     Utils.show('step-review');
 
-    // Update stats
+    Utils.setText('stat-total', this.transactions.length);
     const stats = XLSXParser.getStats(this.transactions, this.fxRate);
-    Utils.setText('stat-total', stats.total);
-    Utils.setText('stat-categorized', stats.categorized);
-    Utils.setText('stat-uncategorized', stats.uncategorized);
     Utils.setText('stat-amount', Utils.formatCurrency(stats.totalEur, 'EUR'));
-    Utils.setText('upload-count', stats.total);
 
-    // Render table
     this.renderTransactionsTable();
+    this.updateStats();
+    this.updateSavedRulesCount();
   },
 
   /**
@@ -187,57 +173,152 @@ const CleanSpending = {
     const tbody = Utils.$('transactions-body');
     const filter = Utils.$('filter-status').value;
 
-    // Filter transactions
     let filtered = this.transactions;
     if (filter === 'categorized') {
-      filtered = this.transactions.filter(t => t.category_id);
+      filtered = this.transactions.filter(t => t.category_id && !t.skipped);
     } else if (filter === 'uncategorized') {
-      filtered = this.transactions.filter(t => !t.category_id);
+      filtered = this.transactions.filter(t => !t.category_id && !t.skipped);
+    } else if (filter === 'skipped') {
+      filtered = this.transactions.filter(t => t.skipped);
     }
 
-    // Render rows — show all transactions, with visual tier indicators
     tbody.innerHTML = filtered.map((tx, i) => {
       const originalIndex = this.transactions.indexOf(tx);
-      const rowClass = tx.category_id ? 'categorized' : 'uncategorized';
+      let rowClass = tx.skipped ? 'skipped' : (tx.category_id ? 'categorized' : 'uncategorized');
 
       let statusBadge;
-      if (tx.auto_categorized && tx.matched_rule && tx.matched_rule.startsWith('spendee:')) {
-        statusBadge = '<span class="badge badge-info" title="Matched via Spendee category mapping">Spendee</span>';
-      } else if (tx.auto_categorized) {
-        statusBadge = `<span class="badge badge-success" title="Matched merchant pattern: ${tx.matched_rule || ''}">Merchant</span>`;
+      if (tx.skipped) {
+        statusBadge = '<span class="badge badge-danger" title="Skipped — will not upload">X</span>';
+      } else if (tx.match_tier === 'merchant') {
+        statusBadge = `<span class="badge badge-success" title="Merchant: ${tx.matched_rule || ''}">M</span>`;
+      } else if (tx.match_tier === 'spendee') {
+        statusBadge = `<span class="badge badge-info" title="Spendee: ${tx.matched_rule || ''}">S</span>`;
       } else if (tx.category_id) {
-        statusBadge = '<span class="badge badge-manual" title="Manually assigned">Manual</span>';
+        statusBadge = '<span class="badge badge-manual" title="Manually assigned">?</span>';
       } else {
-        statusBadge = '<span class="badge badge-warning" title="No match found — needs review">Review</span>';
+        statusBadge = '<span class="badge badge-warning" title="Needs review">!</span>';
       }
+
+      const canSave = tx.category_id && !tx.skipped;
+      const hasSpendee = tx.spendee_category && tx.spendee_category !== 'all-nonspec' && tx.spendee_category !== 'General';
 
       return `
         <tr class="${rowClass}" data-index="${originalIndex}">
           <td>${Utils.formatDateDisplay(tx.charge_date)}</td>
-          <td title="${tx.transaction}">${this.truncate(tx.transaction, 30)}</td>
+          <td class="desc-cell" title="${tx.transaction}">${this.truncate(tx.transaction, 30)}</td>
           <td>${Utils.formatCurrency(tx.amount, tx.currency)}</td>
-          <td>${tx.currency}</td>
           <td>${tx.method}</td>
           <td>
-            <select class="category-select" data-index="${originalIndex}">
+            <select class="category-select" data-index="${originalIndex}" ${tx.skipped ? 'disabled' : ''}>
               <option value="">-- Select --</option>
               ${this.categories.map(c =>
-                `<option value="${c.id}" ${tx.category_id === c.id ? 'selected' : ''}>${c.name || c.spend_name}</option>`
+                `<option value="${c.id}" ${tx.category_id === c.id ? 'selected' : ''}>${c.name}</option>`
               ).join('')}
             </select>
           </td>
           <td>${statusBadge}</td>
+          <td class="actions-cell">
+            <button class="btn-save-rule btn-save-merchant" data-index="${originalIndex}" ${canSave ? '' : 'disabled'}
+              title="Save description as merchant rule">+M</button>
+            <button class="btn-save-rule btn-save-spendee" data-index="${originalIndex}" ${canSave && hasSpendee ? '' : 'disabled'}
+              title="Save spendee category as rule">+S</button>
+            <button class="btn-skip" data-index="${originalIndex}"
+              title="Skip — do not upload">${tx.skipped ? 'Undo' : 'Skip'}</button>
+          </td>
         </tr>
       `;
     }).join('');
 
-    // Add change handlers to category selects
+    // Category select change handlers
     tbody.querySelectorAll('.category-select').forEach(select => {
       select.addEventListener('change', (e) => {
         const index = parseInt(e.target.dataset.index);
-        this.transactions[index].category_id = e.target.value || null;
-        this.transactions[index].auto_categorized = false;
+        const tx = this.transactions[index];
+        tx.category_id = e.target.value || null;
+        tx.auto_categorized = false;
+        tx.match_tier = null;
+
+        // Resolve spend_id from selected category
+        if (tx.category_id) {
+          const cat = this.categories.find(c => c.id === tx.category_id);
+          if (cat) {
+            tx.spend_id = cat.spend_id;
+            tx.category = cat.spend_name;
+          }
+        } else {
+          tx.spend_id = null;
+          tx.category = null;
+        }
+
+        // Enable/disable save buttons for this row
+        const row = e.target.closest('tr');
+        row.querySelectorAll('.btn-save-merchant').forEach(b => b.disabled = !tx.category_id);
+        // Only enable spendee button if there's a useful spendee_category
+        row.querySelectorAll('.btn-save-spendee').forEach(b => {
+          b.disabled = !tx.category_id || !tx.spendee_category || tx.spendee_category === 'all-nonspec' || tx.spendee_category === 'General';
+        });
+
         this.updateStats();
+      });
+    });
+
+    // Save merchant rule buttons
+    tbody.querySelectorAll('.btn-save-merchant').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const index = parseInt(e.target.dataset.index);
+        const tx = this.transactions[index];
+        if (!tx.spend_id || !tx.transaction) return;
+
+        Categorizer.saveMerchantRule(tx.transaction, tx.spend_id);
+        tx.match_tier = 'merchant';
+        tx.matched_rule = tx.transaction.toLowerCase();
+
+        e.target.textContent = 'M';
+        e.target.classList.add('saved');
+        e.target.disabled = true;
+
+        this.updateSavedRulesCount();
+      });
+    });
+
+    // Save spendee rule buttons
+    tbody.querySelectorAll('.btn-save-spendee').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const index = parseInt(e.target.dataset.index);
+        const tx = this.transactions[index];
+        if (!tx.spend_id || !tx.spendee_category) return;
+
+        Categorizer.saveSpendeeRule(tx.spendee_category, tx.spend_id);
+
+        // Apply to all transactions with the same spendee_category that aren't already categorized
+        this.transactions.forEach(otherTx => {
+          if (otherTx.spendee_category === tx.spendee_category && !otherTx.category_id) {
+            const resolved = Categorizer.resolveSpendId(tx.spend_id, this.categories);
+            if (resolved) {
+              otherTx.spend_id = tx.spend_id;
+              otherTx.category_id = resolved.id;
+              otherTx.category = resolved.spend_name;
+              otherTx.match_tier = 'spendee';
+              otherTx.matched_rule = tx.spendee_category;
+              otherTx.auto_categorized = true;
+            }
+          }
+        });
+
+        this.updateStats();
+        this.renderTransactionsTable();
+        this.updateSavedRulesCount();
+      });
+    });
+
+    // Skip buttons
+    tbody.querySelectorAll('.btn-skip').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const index = parseInt(e.target.dataset.index);
+        const tx = this.transactions[index];
+        tx.skipped = !tx.skipped;
+        this.updateStats();
+        this.renderTransactionsTable();
       });
     });
   },
@@ -254,22 +335,86 @@ const CleanSpending = {
    * Update stats after category changes
    */
   updateStats() {
-    const stats = XLSXParser.getStats(this.transactions, this.fxRate);
+    const active = this.transactions.filter(t => !t.skipped);
+    const skipped = this.transactions.length - active.length;
+    const stats = XLSXParser.getStats(active, this.fxRate);
     Utils.setText('stat-categorized', stats.categorized);
     Utils.setText('stat-uncategorized', stats.uncategorized);
-    Utils.setText('upload-count', stats.total);
+    Utils.setText('stat-skipped', skipped);
+    Utils.setText('upload-count', active.filter(t => t.category_id).length);
+  },
+
+  /**
+   * Update the saved rules counter display
+   */
+  updateSavedRulesCount() {
+    const counts = Categorizer.getSavedRuleCounts();
+    const total = counts.merchant + counts.spendee;
+    const el = Utils.$('saved-rules-count');
+    if (el) {
+      el.textContent = `${total} saved rule${total !== 1 ? 's' : ''} (${counts.merchant} merchant, ${counts.spendee} spendee)`;
+      const container = Utils.$('download-rules-section');
+      if (container) {
+        if (total > 0) Utils.show(container);
+        else Utils.hide(container);
+      }
+    }
+  },
+
+  /**
+   * Setup download rules buttons
+   */
+  setupDownloadRules() {
+    const dlMerchant = Utils.$('download-merchant-csv');
+    const dlSpendee = Utils.$('download-spendee-csv');
+    const clearBtn = Utils.$('clear-saved-rules');
+
+    if (dlMerchant) {
+      dlMerchant.addEventListener('click', () => {
+        const csv = Categorizer.exportMerchantCSV();
+        if (csv) this.downloadFile('merchant-rules-new.csv', csv);
+      });
+    }
+
+    if (dlSpendee) {
+      dlSpendee.addEventListener('click', () => {
+        const csv = Categorizer.exportSpendeeCSV();
+        if (csv) this.downloadFile('spendee-rules-new.csv', csv);
+      });
+    }
+
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => {
+        if (confirm('Clear all saved rules from browser storage?')) {
+          localStorage.removeItem(STORAGE_KEYS.MERCHANT);
+          localStorage.removeItem(STORAGE_KEYS.SPENDEE);
+          this.updateSavedRulesCount();
+        }
+      });
+    }
+  },
+
+  /**
+   * Trigger a file download in the browser
+   */
+  downloadFile(filename, content) {
+    const blob = new Blob([content], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
   },
 
   /**
    * Setup review step controls
    */
   setupReviewControls() {
-    // Filter change
     Utils.$('filter-status').addEventListener('change', () => {
       this.renderTransactionsTable();
     });
 
-    // Back to upload
     Utils.$('back-to-upload').addEventListener('click', () => {
       Utils.hide('step-review');
       Utils.show('step-upload');
@@ -283,8 +428,8 @@ const CleanSpending = {
     const uploadBtn = Utils.$('upload-btn');
 
     uploadBtn.addEventListener('click', async () => {
-      // Check for uncategorized transactions
-      const uncategorized = this.transactions.filter(t => !t.category_id);
+      const active = this.transactions.filter(t => !t.skipped);
+      const uncategorized = active.filter(t => !t.category_id);
       if (uncategorized.length > 0) {
         const proceed = confirm(
           `${uncategorized.length} transactions are still uncategorized. ` +
@@ -293,26 +438,22 @@ const CleanSpending = {
         if (!proceed) return;
       }
 
-      // Filter to only categorized transactions
-      const toUpload = this.transactions.filter(t => t.category_id);
+      const toUpload = active.filter(t => t.category_id);
       if (toUpload.length === 0) {
         Utils.showAlert('review-alert', 'No categorized transactions to upload.', 'warning');
         Utils.show('review-alert');
         return;
       }
 
-      // Calculate euro amounts
       toUpload.forEach(tx => {
         tx.euro_money = parseFloat(Utils.toEur(tx.amount, tx.currency, this.fxRate).toFixed(2));
       });
 
-      // Show progress step
       Utils.hide('step-review');
       Utils.show('step-progress');
       Utils.setText('progress-total', toUpload.length);
 
       try {
-        // Upload with progress
         const result = await API.batchCreateSpending(
           toUpload,
           this.fxRate,
@@ -324,7 +465,6 @@ const CleanSpending = {
           }
         );
 
-        // Show complete step
         this.showCompleteStep(result);
       } catch (error) {
         console.error('Upload failed:', error);
@@ -365,25 +505,20 @@ const CleanSpending = {
    */
   setupStartOver() {
     Utils.$('start-over-btn').addEventListener('click', () => {
-      // Reset state
       this.files = [];
       this.transactions = [];
 
-      // Reset file input
       Utils.$('file-input').value = '';
       Utils.hide('files-list');
       Utils.$('parse-btn').disabled = true;
 
-      // Reset progress
       Utils.$('progress-fill').style.width = '0%';
       Utils.setText('progress-current', '0');
       Utils.setText('progress-percent', '0%');
       Utils.setHTML('upload-status', '');
 
-      // Hide errors
       Utils.hide('upload-errors');
 
-      // Show upload step
       Utils.hide('step-complete');
       Utils.hide('step-progress');
       Utils.hide('step-review');

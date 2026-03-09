@@ -75,10 +75,11 @@
     <div id="step-review" class="card hidden">
       <h2 class="card-title">Step 2: Review & Categorize</h2>
       <p class="card-subtitle">
-        Review all parsed transactions. <span class="badge badge-success">Merchant</span> = matched by description,
-        <span class="badge badge-info">Spendee</span> = matched by Spendee category,
-        <span class="badge badge-manual">Manual</span> = manually assigned,
-        <span class="badge badge-warning">Review</span> = needs your input.
+        Review all transactions. Status: <span class="badge badge-success">M</span> merchant match,
+        <span class="badge badge-info">S</span> spendee match,
+        <span class="badge badge-manual">?</span> manual,
+        <span class="badge badge-warning">!</span> needs review.
+        Use <strong>+M</strong> / <strong>+S</strong> to save rules for next time.
       </p>
 
       <div id="review-alert" class="hidden"></div>
@@ -97,6 +98,10 @@
           <div class="value" id="stat-uncategorized">0</div>
         </div>
         <div class="stat-card">
+          <div class="label">Skipped</div>
+          <div class="value" id="stat-skipped">0</div>
+        </div>
+        <div class="stat-card">
           <div class="label">Total Amount (EUR)</div>
           <div class="value" id="stat-amount">0</div>
         </div>
@@ -109,6 +114,7 @@
             <option value="all">All Transactions</option>
             <option value="uncategorized">Needs Review</option>
             <option value="categorized">Categorized</option>
+            <option value="skipped">Skipped</option>
           </select>
         </div>
         <div class="form-group">
@@ -124,10 +130,10 @@
               <th>Date</th>
               <th>Description</th>
               <th>Amount</th>
-              <th>Currency</th>
               <th>Wallet</th>
               <th>Category</th>
               <th>Status</th>
+              <th>Save</th>
             </tr>
           </thead>
           <tbody id="transactions-body">
@@ -136,10 +142,20 @@
         </table>
       </div>
 
-      <div style="margin-top: 20px; display: flex; gap: 10px;">
+      <div style="margin-top: 20px; display: flex; gap: 10px; align-items: center;">
         <button id="upload-btn" class="btn btn-success">
           Upload to Notion (<span id="upload-count">0</span> transactions)
         </button>
+      </div>
+
+      <!-- Saved rules management -->
+      <div id="download-rules-section" class="hidden" style="margin-top: 20px; padding: 16px; border: 1px solid var(--border-default); border-radius: var(--radius-md);">
+        <p style="margin-bottom: 12px;"><span id="saved-rules-count">0 saved rules</span></p>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button id="download-merchant-csv" class="btn btn-outline btn-sm">Download merchant rules</button>
+          <button id="download-spendee-csv" class="btn btn-outline btn-sm">Download spendee rules</button>
+          <button id="clear-saved-rules" class="btn btn-outline btn-sm" style="color: var(--danger-color);">Clear saved rules</button>
+        </div>
       </div>
     </div>
 

@@ -1,62 +1,94 @@
-merchant_pattern,category
-# Groceries & Supermarkets
-mercadona,Groceries
-carrefour,Groceries
-lidl,Groceries
-aldi,Groceries
-eroski,Groceries
-dia,Groceries
-alcampo,Groceries
-hipercor,Groceries
+merchant_pattern,spend_id
+# Groceries & Supermarkets (ES)
+mercadona,SE00012
+carrefour,SE00012
+lidl,SE00012
+aldi,SE00012
+eroski,SE00012
+dia,SE00012
+alcampo,SE00012
+hipercor,SE00012
 # Food & Restaurants
-uber eats,Food
-glovo,Food
-just eat,Food
-deliveroo,Food
-restaurante,Food
-restaurant,Food
-mcdonalds,Food
-burger king,Food
-starbucks,Food
-# Transport
-uber,Transport
-cabify,Transport
-bolt,Transport
-taxi,Transport
-metro,Transport
-renfe,Transport
-blablacar,Transport
-gasolinera,Transport
-repsol,Transport
-cepsa,Transport
-# Shopping
-amazon,Shopping
-el corte ingles,Shopping
-zara,Shopping
-mango,Shopping
-h&m,Shopping
-primark,Shopping
-ikea,Shopping
-mediamarkt,Shopping
+uber eats,SE00018
+ubereats,SE00018
+uber * eats,SE00018
+glovo,SE00018
+just eat,SE00018
+deliveroo,SE00018
+restaurante,SE00018
+restaurant,SE00018
+mcdonalds,SE00018
+burger king,SE00018
+starbucks,SE00018
+# Ride-hailing & Taxi
+uber* pending,SE00016
+ubr*,SE00016
+cabify,SE00016
+bolt,SE00016
+taxi,SE00016
+# Public Transport
+metro,SE00017
+renfe,SE00017
+blablacar,SE00017
+# Fuel
+gasolinera,SE00016
+repsol,SE00016
+cepsa,SE00016
+# Clothing
+zara,SE00028
+mango,SE00028
+h&m,SE00028
+primark,SE00028
+# Subscriptions
+netflix,SE00013
+spotify,SE00013
+hbo,SE00013
+disney+,SE00013
+google*google one,SE00013
 # Entertainment
-netflix,Entertainment
-spotify,Entertainment
-hbo,Entertainment
-disney+,Entertainment
-cine,Entertainment
+cine,SE00021
 # Utilities
-iberdrola,Utilities
-endesa,Utilities
-naturgy,Utilities
-agua,Utilities
+iberdrola,SE00011
+endesa,SE00011
+naturgy,SE00011
+agua,SE00011
+prosegur,SE00011
 # Telecom
-vodafone,Telecom
-movistar,Telecom
-orange,Telecom
+vodafone,SE00011
+movistar,SE00011
+orange,SE00011
 # Healthcare
-farmacia,Healthcare
-pharmacy,Healthcare
+farmacia,SE00010
+pharmacy,SE00010
+buencoco,SE00010
 # Insurance
-axa,Insurance
-mapfre,Insurance
-allianz,Insurance
+asisa,SE00008
+sanitas,SE00008
+axa,SE00008
+mapfre,SE00008
+allianz,SE00008
+famicord,SE00008
+# Education
+alaria,SE00007
+# Pets
+vetassur,SE00019
+tammy,SE00019
+# Home repairs
+mend master,SE00025
+# Trip (Mexico)
+soriana,SE00036
+heb,SE00036
+oxxo,SE00036
+7 eleven,SE00036
+benavides,SE00036
+dr carlos,SE00036
+epic cinemas,SE00036
+clip mx,SE00036
+rest nikkori,SE00036
+buchakas,SE00036
+th calzd del valle,SE00036
+estac punto valle,SE00036
+bread panaderos,SE00036
+# Investment
+aws emea,SE00001
+claude.ai,SE00001
