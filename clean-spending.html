@@ -75,8 +75,10 @@
     <div id="step-review" class="card hidden">
       <h2 class="card-title">Step 2: Review & Categorize</h2>
       <p class="card-subtitle">
-        Review the parsed transactions. Auto-categorized items are marked with a check.
-        Update categories as needed for uncategorized items.
+        Review all parsed transactions. <span class="badge badge-success">Merchant</span> = matched by description,
+        <span class="badge badge-info">Spendee</span> = matched by Spendee category,
+        <span class="badge badge-manual">Manual</span> = manually assigned,
+        <span class="badge badge-warning">Review</span> = needs your input.
       </p>
 
       <div id="review-alert" class="hidden"></div>

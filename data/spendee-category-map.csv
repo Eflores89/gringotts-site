@@ -1,0 +1,37 @@
+spendee_category,spend_id
+# Mapping from Spendee "Category name" to Gringotts spend_id
+# Used as Tier 2 fallback when no merchant pattern matches
+impuestos-fees,SE00020
+groceries,SE00012
+Groceries,SE00012
+recreacion,SE00021
+wible-taxi,SE00016
+meds-drs,SE00010
+Healthcare,SE00010
+godin,SE00018
+regalos,SE00027
+suscripciones,SE00013
+ropa,SE00028
+inversion-ahorro,SE00001
+transporte-publico,SE00017
+viaje-todo,SE00036
+tinto-arreglos,SE00025
+seguros,SE00008
+servicios-luzgas,SE00011
+belleza,SE00022
+comunidad,SE00005
+educacion,SE00007
+pagos-deuda,SE00002
+hipoteca,SE00004
+servicios-alarmas,SE00011
+tammy,SE00019
+servicios-telco,SE00011
+ayuda-hogar,SE00009
+servicios-agua,SE00011
+acondicionamiento-hogar,SE00026
+viaje-vuelo,SE00034
+gym-sports,SE00014
+libros-cultura,SE00023
+viaje-hotel,SE00035
+huercos-otros,SE00024
+gaming,SE00029
