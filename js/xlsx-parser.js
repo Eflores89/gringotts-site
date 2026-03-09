@@ -15,6 +15,7 @@ const XLSXParser = {
     for (const file of files) {
       try {
         const transactions = await this.parseFile(file);
+        console.log(`Parsed ${file.name}: ${transactions.length} expenses found`);
         allTransactions.push(...transactions);
       } catch (error) {
         console.error(`Error parsing ${file.name}:`, error);

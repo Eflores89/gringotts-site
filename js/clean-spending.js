@@ -195,13 +195,21 @@ const CleanSpending = {
       filtered = this.transactions.filter(t => !t.category_id);
     }
 
-    // Render rows
+    // Render rows — show all transactions, with visual tier indicators
     tbody.innerHTML = filtered.map((tx, i) => {
       const originalIndex = this.transactions.indexOf(tx);
       const rowClass = tx.category_id ? 'categorized' : 'uncategorized';
-      const statusBadge = tx.auto_categorized
-        ? '<span class="badge badge-success">Auto</span>'
-        : (tx.category_id ? '<span class="badge badge-info">Manual</span>' : '<span class="badge badge-warning">Review</span>');
+
+      let statusBadge;
+      if (tx.auto_categorized && tx.matched_rule && tx.matched_rule.startsWith('spendee:')) {
+        statusBadge = '<span class="badge badge-info" title="Matched via Spendee category mapping">Spendee</span>';
+      } else if (tx.auto_categorized) {
+        statusBadge = `<span class="badge badge-success" title="Matched merchant pattern: ${tx.matched_rule || ''}">Merchant</span>`;
+      } else if (tx.category_id) {
+        statusBadge = '<span class="badge badge-manual" title="Manually assigned">Manual</span>';
+      } else {
+        statusBadge = '<span class="badge badge-warning" title="No match found — needs review">Review</span>';
+      }
 
       return `
         <tr class="${rowClass}" data-index="${originalIndex}">
