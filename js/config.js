@@ -28,9 +28,9 @@ const CONFIG = {
   },
 
   // Batch Processing
-  BATCH_SIZE: 50,
+  BATCH_SIZE: 10,
   BATCH_DELAY_MS: 1000,
-  API_TIMEOUT_MS: 30000,
+  API_TIMEOUT_MS: 60000,
 
   // Spendee Column Mapping
   SPENDEE_COLUMNS: {
