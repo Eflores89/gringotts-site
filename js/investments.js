@@ -430,6 +430,7 @@ const Investments = {
                     fillStyle: dataset.backgroundColor[i],
                     strokeStyle: dataset.borderColor,
                     lineWidth: dataset.borderWidth,
+                    color: '#ffffff',
                     index: i
                   };
                 });
@@ -550,6 +551,7 @@ const Investments = {
                     fillStyle: dataset.backgroundColor[i],
                     strokeStyle: dataset.borderColor,
                     lineWidth: dataset.borderWidth,
+                    color: '#ffffff',
                     index: i
                   };
                 });
