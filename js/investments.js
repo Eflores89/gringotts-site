@@ -70,6 +70,10 @@ const Investments = {
     Utils.$('include-unvested').addEventListener('change', () => {
       this.renderProjection();
     });
+
+    Utils.$('group-by-ticker').addEventListener('change', () => {
+      this.renderPortfolioTable();
+    });
   },
 
   /**
@@ -242,29 +246,84 @@ const Investments = {
     const totalReturnPct = totalCost > 0 ? ((totalGainLoss / totalCost) * 100).toFixed(2) : '0.00';
 
     const tbody = Utils.$('portfolio-table-body');
+    const groupByTicker = Utils.$('group-by-ticker').checked;
+
+    // Build display rows: either individual investments or grouped by ticker
+    let displayRows;
+
+    if (groupByTicker) {
+      const groups = {};
+      this.investments.forEach(inv => {
+        const key = inv.ticker || inv.name;
+        if (!groups[key]) {
+          groups[key] = { key, investments: [], totalValue: 0, totalCost: 0, totalQty: 0 };
+        }
+        const g = groups[key];
+        g.investments.push(inv);
+        g.totalValue += this.getEuroValue(inv);
+        g.totalCost += this.getCostBasis(inv);
+        g.totalQty += (inv.quantity || 0);
+      });
+
+      displayRows = Object.values(groups).map(g => {
+        // Weighted average growth rate by value
+        const weightedGrowth = g.totalValue > 0
+          ? g.investments.reduce((sum, inv) => {
+              const rate = this.growthRates[inv.id] != null ? this.growthRates[inv.id] : 7;
+              return sum + rate * this.getEuroValue(inv);
+            }, 0) / g.totalValue
+          : 7;
+        const allVested = g.investments.every(inv => this.isVested(inv));
+        const someVested = g.investments.some(inv => this.isVested(inv));
+        const types = [...new Set(g.investments.map(inv => inv.asset_type || '-'))];
+
+        return {
+          name: g.key,
+          ticker: '',
+          assetType: types.join(', '),
+          quantity: g.totalQty,
+          value: g.totalValue,
+          cost: g.totalCost,
+          vested: allVested ? 'liquid' : someVested ? 'mixed' : 'unvested',
+          growthRate: weightedGrowth,
+          invIds: g.investments.map(inv => inv.id)
+        };
+      });
+    } else {
+      displayRows = this.investments.map(inv => ({
+        name: inv.name,
+        ticker: inv.ticker ? ` (${inv.ticker})` : '',
+        assetType: inv.asset_type || '-',
+        quantity: inv.quantity || 0,
+        value: this.getEuroValue(inv),
+        cost: this.getCostBasis(inv),
+        vested: this.isVested(inv) ? 'liquid' : 'unvested',
+        growthRate: this.growthRates[inv.id] != null ? this.growthRates[inv.id] : 7,
+        invIds: [inv.id]
+      }));
+    }
 
     // Sort by current value descending
-    const sorted = [...this.investments].sort((a, b) =>
-      this.getEuroValue(b) - this.getEuroValue(a)
-    );
+    displayRows.sort((a, b) => b.value - a.value);
 
-    const rows = sorted.map(inv => {
-      const value = this.getEuroValue(inv);
-      const cost = this.getCostBasis(inv);
-      const gainLoss = value - cost;
-      const pctReturn = cost > 0 ? ((gainLoss / cost) * 100).toFixed(2) : '0.00';
-      const pctPortfolio = totalValue > 0 ? ((value / totalValue) * 100).toFixed(1) : '0.0';
-      const vested = this.isVested(inv);
-      const ticker = inv.ticker ? ` (${inv.ticker})` : '';
-      const assetType = inv.asset_type || '-';
+    const rows = displayRows.map(row => {
+      const gainLoss = row.value - row.cost;
+      const pctReturn = row.cost > 0 ? ((gainLoss / row.cost) * 100).toFixed(2) : '0.00';
+      const pctPortfolio = totalValue > 0 ? ((row.value / totalValue) * 100).toFixed(1) : '0.0';
 
-      const growthRate = this.growthRates[inv.id] != null ? this.growthRates[inv.id] : 7;
+      const statusBadge = row.vested === 'liquid'
+        ? '<span class="badge badge-success">Liquid</span>'
+        : row.vested === 'mixed'
+          ? '<span class="badge badge-warning">Mixed</span>'
+          : '<span class="badge badge-warning">Unvested</span>';
+
+      const invIdsAttr = row.invIds.join(',');
 
       return `<tr>
-        <td>${inv.name}${ticker}</td>
-        <td><span class="badge badge-info">${assetType}</span></td>
-        <td style="text-align: right;">${inv.quantity || 0}</td>
-        <td style="text-align: right;">${Utils.formatCurrency(value, 'EUR')}</td>
+        <td>${row.name}${row.ticker}</td>
+        <td><span class="badge badge-info">${row.assetType}</span></td>
+        <td style="text-align: right;">${row.quantity}</td>
+        <td style="text-align: right;">${Utils.formatCurrency(row.value, 'EUR')}</td>
         <td style="text-align: right; color: ${gainLoss >= 0 ? 'var(--success-color)' : 'var(--danger-color)'}">
           ${gainLoss >= 0 ? '+' : ''}${Utils.formatCurrency(gainLoss, 'EUR')}
         </td>
@@ -272,14 +331,12 @@ const Investments = {
           ${gainLoss >= 0 ? '+' : ''}${pctReturn}%
         </td>
         <td style="text-align: right;">${pctPortfolio}%</td>
-        <td>${vested
-          ? '<span class="badge badge-success">Liquid</span>'
-          : '<span class="badge badge-warning">Unvested</span>'}</td>
+        <td>${statusBadge}</td>
         <td>
           <div class="growth-slider-cell">
-            <input type="range" class="inv-growth-slider" data-inv-id="${inv.id}"
-              min="0" max="20" step="0.5" value="${growthRate}">
-            <span class="inv-growth-value">${growthRate.toFixed(1)}%</span>
+            <input type="range" class="inv-growth-slider" data-inv-ids="${invIdsAttr}"
+              min="0" max="20" step="0.5" value="${row.growthRate.toFixed(1)}">
+            <span class="inv-growth-value">${row.growthRate.toFixed(1)}%</span>
           </div>
         </td>
       </tr>`;
@@ -291,8 +348,8 @@ const Investments = {
     tbody.querySelectorAll('.inv-growth-slider').forEach(slider => {
       slider.addEventListener('input', () => {
         const rate = parseFloat(slider.value);
-        const invId = slider.dataset.invId;
-        this.growthRates[invId] = rate;
+        const invIds = slider.dataset.invIds.split(',');
+        invIds.forEach(id => { this.growthRates[id] = rate; });
         slider.nextElementSibling.textContent = `${rate.toFixed(1)}%`;
         this.renderProjection();
       });
