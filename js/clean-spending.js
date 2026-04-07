@@ -135,6 +135,7 @@ const CleanSpending = {
       this.fxRate = parseFloat(Utils.$('fx-rate').value) || CONFIG.DEFAULT_FX_RATE;
 
       Utils.setButtonLoading(parseBtn, true, 'Parsing...');
+      Utils.hide('upload-alert');
 
       try {
         this.transactions = await XLSXParser.parseFiles(this.files);
@@ -142,8 +143,7 @@ const CleanSpending = {
         this.showReviewStep();
       } catch (error) {
         console.error('Failed to parse files:', error);
-        Utils.showAlert('review-alert', `Error: ${error.message}`, 'error');
-        Utils.show('review-alert');
+        Utils.showAlert('upload-alert', `Error parsing files: ${error.message}`, 'error');
       } finally {
         Utils.setButtonLoading(parseBtn, false, 'Parse Files');
       }
@@ -510,6 +510,7 @@ const CleanSpending = {
 
       Utils.$('file-input').value = '';
       Utils.hide('files-list');
+      Utils.hide('upload-alert');
       Utils.$('parse-btn').disabled = true;
 
       Utils.$('progress-fill').style.width = '0%';

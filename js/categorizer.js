@@ -170,7 +170,7 @@ const Categorizer = {
    */
   categorizeAll(transactions, categoriesList = []) {
     return transactions.map(tx => {
-      const description = (tx.transaction || '').toLowerCase();
+      const description = String(tx.transaction || '').toLowerCase();
       const spendeeCategory = tx.spendee_category || '';
 
       let spend_id = null;
