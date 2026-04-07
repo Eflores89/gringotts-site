@@ -90,10 +90,10 @@ const XLSXParser = {
     const chargeDate = this.parseDate(rawDate);
     const amount = Math.abs(row[CONFIG.SPENDEE_COLUMNS.AMOUNT] || 0);
     const currency = row[CONFIG.SPENDEE_COLUMNS.CURRENCY] || 'EUR';
-    const note = row[CONFIG.SPENDEE_COLUMNS.NOTE] || '';
-    const wallet = row[CONFIG.SPENDEE_COLUMNS.WALLET] || '';
-    const spendeeCategory = row[CONFIG.SPENDEE_COLUMNS.CATEGORY] || '';
-    const labels = row[CONFIG.SPENDEE_COLUMNS.LABELS] || '';
+    const note = String(row[CONFIG.SPENDEE_COLUMNS.NOTE] || '');
+    const wallet = String(row[CONFIG.SPENDEE_COLUMNS.WALLET] || '');
+    const spendeeCategory = String(row[CONFIG.SPENDEE_COLUMNS.CATEGORY] || '');
+    const labels = String(row[CONFIG.SPENDEE_COLUMNS.LABELS] || '');
 
     return {
       // Original data
