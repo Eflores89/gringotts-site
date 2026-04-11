@@ -1,0 +1,23 @@
+.item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  color: var(--neutral-on-background-medium);
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.item:hover {
+  background: var(--neutral-alpha-weak);
+  color: var(--neutral-on-background-strong);
+}
+
+.active {
+  background: var(--brand-alpha-weak);
+  color: var(--brand-on-background-strong);
+}
+
+.active:hover {
+  background: var(--brand-alpha-medium);
+}
