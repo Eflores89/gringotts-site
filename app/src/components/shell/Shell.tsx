@@ -1,24 +1,15 @@
 import { ReactNode } from "react";
-import { Column, Row } from "@once-ui-system/core";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 
 export function Shell({ children }: { children: ReactNode }) {
   return (
-    <Row fillWidth style={{ minHeight: "100vh" }}>
+    <div className="flex min-h-screen bg-background">
       <Sidebar />
-      <Column fillWidth style={{ minWidth: 0 }}>
+      <div className="flex min-w-0 flex-1 flex-col">
         <Header />
-        <Column
-          as="main"
-          fillWidth
-          padding="l"
-          gap="20"
-          style={{ flex: 1, overflowY: "auto" }}
-        >
-          {children}
-        </Column>
-      </Column>
-    </Row>
+        <main className="flex-1 overflow-y-auto p-6 lg:p-8">{children}</main>
+      </div>
+    </div>
   );
 }

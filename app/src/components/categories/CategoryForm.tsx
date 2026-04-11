@@ -4,7 +4,17 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Button, Column, Input, Row } from "@once-ui-system/core";
+import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import type { Category } from "@/db/schema";
 
 export const categoryFormSchema = z.object({
@@ -55,63 +65,112 @@ export function CategoryForm({
     }
   }, [initial, form]);
 
-  const errors = form.formState.errors;
-
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)}>
-      <Column gap="16" fillWidth maxWidth={40}>
-        <Input
-          id="name"
-          label="Name"
-          error={!!errors.name}
-          errorMessage={errors.name?.message}
-          {...form.register("name")}
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Name</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-        <Input
-          id="spendName"
-          label="Spend name (canonical, used by rules)"
-          {...form.register("spendName")}
+        <FormField
+          control={form.control}
+          name="spendName"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Spend name</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="Canonical name used by rules" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-        <Input
-          id="spendId"
-          label="Spend ID (business code, e.g. SE00012)"
-          {...form.register("spendId")}
+        <FormField
+          control={form.control}
+          name="spendId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Spend ID</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="e.g. SE00012" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-        <Row gap="16" fillWidth wrap>
-          <Input
-            id="spendGrp"
-            label="Group"
-            style={{ flex: 1 }}
-            {...form.register("spendGrp")}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <FormField
+            control={form.control}
+            name="spendGrp"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Group</FormLabel>
+                <FormControl>
+                  <Input {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-          <Input
-            id="spendLifegrp"
-            label="Lifecycle group"
-            style={{ flex: 1 }}
-            {...form.register("spendLifegrp")}
+          <FormField
+            control={form.control}
+            name="spendLifegrp"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Lifecycle group</FormLabel>
+                <FormControl>
+                  <Input {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-        </Row>
-        <Input
-          id="status"
-          label="Status (e.g. Latest, Archived)"
-          {...form.register("status")}
+        </div>
+        <FormField
+          control={form.control}
+          name="status"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Status</FormLabel>
+              <FormControl>
+                <Input {...field} placeholder="Latest" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-        <Row gap="8">
-          <Button type="submit" variant="primary" loading={submitting}>
-            {submitLabel}
+        <div className="flex items-center gap-2 pt-2">
+          <Button type="submit" disabled={submitting}>
+            {submitting ? (
+              <>
+                <Loader2 className="size-4 animate-spin" />
+                Saving…
+              </>
+            ) : (
+              submitLabel
+            )}
           </Button>
           {onCancel ? (
             <Button
               type="button"
-              variant="tertiary"
+              variant="ghost"
               onClick={onCancel}
               disabled={submitting}
             >
               Cancel
             </Button>
           ) : null}
-        </Row>
-      </Column>
-    </form>
+        </div>
+      </form>
+    </Form>
   );
 }

@@ -1,5 +1,4 @@
 import { ReactNode } from "react";
-import { Column, Heading, Row, Text } from "@once-ui-system/core";
 
 export function PageHeader({
   title,
@@ -11,16 +10,14 @@ export function PageHeader({
   actions?: ReactNode;
 }) {
   return (
-    <Row fillWidth horizontal="between" vertical="center" gap="16" wrap>
-      <Column gap="4">
-        <Heading variant="heading-strong-l">{title}</Heading>
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <div className="space-y-1">
+        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
         {description ? (
-          <Text variant="body-default-m" onBackground="neutral-weak">
-            {description}
-          </Text>
+          <p className="text-sm text-muted-foreground">{description}</p>
         ) : null}
-      </Column>
-      {actions ? <Row gap="8">{actions}</Row> : null}
-    </Row>
+      </div>
+      {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
+    </div>
   );
 }

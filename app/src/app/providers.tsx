@@ -1,20 +1,10 @@
 "use client";
 
 import { ReactNode, useState } from "react";
+import { ThemeProvider } from "next-themes";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import {
-  ThemeProvider,
-  ToastProvider,
-  IconProvider,
-  LayoutProvider,
-  Toaster,
-  useToast,
-} from "@once-ui-system/core";
-
-function ToasterMount() {
-  const { toasts, removeToast } = useToast();
-  return <Toaster toasts={toasts} removeToast={removeToast} />;
-}
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "@/components/ui/sonner";
 
 export function Providers({ children }: { children: ReactNode }) {
   const [client] = useState(
@@ -30,17 +20,18 @@ export function Providers({ children }: { children: ReactNode }) {
   );
 
   return (
-    <ThemeProvider theme="dark" brand="violet" accent="cyan">
-      <LayoutProvider>
-        <IconProvider>
-          <ToastProvider>
-            <QueryClientProvider client={client}>
-              {children}
-              <ToasterMount />
-            </QueryClientProvider>
-          </ToastProvider>
-        </IconProvider>
-      </LayoutProvider>
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="dark"
+      enableSystem={false}
+      disableTransitionOnChange
+    >
+      <QueryClientProvider client={client}>
+        <TooltipProvider delayDuration={200}>
+          {children}
+          <Toaster richColors closeButton position="top-right" />
+        </TooltipProvider>
+      </QueryClientProvider>
     </ThemeProvider>
   );
 }

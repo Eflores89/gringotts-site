@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Button, Row, Heading } from "@once-ui-system/core";
+import { LogOut } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export function Header() {
   const router = useRouter();
@@ -13,21 +14,16 @@ export function Header() {
   }
 
   return (
-    <Row
-      as="header"
-      fillWidth
-      horizontal="between"
-      vertical="center"
-      paddingX="l"
-      paddingY="12"
-      borderBottom="neutral-medium"
-      background="surface"
-      style={{ minHeight: 56 }}
-    >
-      <Heading variant="heading-strong-s">Dashboard</Heading>
-      <Button variant="tertiary" size="s" onClick={onLogout}>
-        Logout
+    <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b border-border bg-background/80 px-6 backdrop-blur-sm">
+      <div className="flex items-center gap-3">
+        <span className="text-sm font-medium text-muted-foreground">
+          Gringotts
+        </span>
+      </div>
+      <Button variant="ghost" size="sm" onClick={onLogout} className="gap-2">
+        <LogOut className="size-4" />
+        <span>Logout</span>
       </Button>
-    </Row>
+    </header>
   );
 }

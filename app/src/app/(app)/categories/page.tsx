@@ -1,161 +1,179 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useState } from "react";
+import { toast } from "sonner";
+import { Plus, Pencil, Trash2, Tag } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import {
-  Button,
-  Card,
-  Column,
   Dialog,
-  Row,
-  Skeleton,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
   Table,
-  Tag,
-  Text,
-  useToast,
-} from "@once-ui-system/core";
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { PageHeader } from "@/components/common/PageHeader";
-import { useCategories, useDeleteCategory } from "@/hooks/use-categories";
+import {
+  useCategories,
+  useDeleteCategory,
+} from "@/hooks/use-categories";
 
 export default function CategoriesPage() {
   const { data, isLoading, isError, error } = useCategories();
   const del = useDeleteCategory();
-  const { addToast } = useToast();
   const [confirmId, setConfirmId] = useState<string | null>(null);
-
-  const tableData = useMemo(() => {
-    const headers = [
-      { content: "Spend ID", key: "spendId" },
-      { content: "Name", key: "name" },
-      { content: "Spend name", key: "spendName" },
-      { content: "Group", key: "spendGrp" },
-      { content: "Lifecycle", key: "spendLifegrp" },
-      { content: "Status", key: "status" },
-      { content: "", key: "actions" },
-    ];
-    const rows = (data?.categories ?? []).map((c) => [
-      <Text key="sid" variant="body-default-s">
-        {c.spendId ?? "—"}
-      </Text>,
-      <Text key="n" variant="body-strong-s">
-        {c.name}
-      </Text>,
-      <Text key="sn" variant="body-default-s">
-        {c.spendName ?? "—"}
-      </Text>,
-      <Text key="g" variant="body-default-s">
-        {c.spendGrp ?? "—"}
-      </Text>,
-      <Text key="lg" variant="body-default-s">
-        {c.spendLifegrp ?? "—"}
-      </Text>,
-      c.status ? (
-        <Tag key="st" size="s">
-          {c.status}
-        </Tag>
-      ) : (
-        <Text key="st" variant="body-default-s">
-          —
-        </Text>
-      ),
-      <Row key="a" gap="4" horizontal="end">
-        <Button
-          href={`/categories/${c.id}`}
-          variant="tertiary"
-          size="s"
-        >
-          Edit
-        </Button>
-        <Button
-          variant="tertiary"
-          size="s"
-          onClick={() => setConfirmId(c.id)}
-        >
-          Delete
-        </Button>
-      </Row>,
-    ]);
-    return { headers, rows };
-  }, [data]);
 
   async function confirmDelete() {
     if (!confirmId) return;
     try {
       await del.mutateAsync(confirmId);
-      addToast({ variant: "success", message: "Category deleted" });
-    } catch (err) {
-      addToast({
-        variant: "danger",
-        message: err instanceof Error ? err.message : "Delete failed",
-      });
-    } finally {
+      toast.success("Category deleted");
       setConfirmId(null);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Delete failed");
     }
   }
 
+  const rows = data?.categories ?? [];
+
   return (
-    <Column gap="20" fillWidth>
+    <div className="space-y-6">
       <PageHeader
         title="Categories"
         description="Full list of spend categories. Edit or delete as needed."
         actions={
-          <Button href="/categories/new" variant="primary" size="s">
-            New category
+          <Button asChild size="sm">
+            <Link href="/categories/new">
+              <Plus className="size-4" />
+              New category
+            </Link>
           </Button>
         }
       />
-      <Card padding="0" radius="l" border="neutral-medium" background="surface">
+
+      <Card className="overflow-hidden p-0">
         {isLoading ? (
-          <Column gap="8" padding="l">
-            <Skeleton shape="line" width="xl" height="s" />
-            <Skeleton shape="line" width="xl" height="s" />
-            <Skeleton shape="line" width="xl" height="s" />
-          </Column>
+          <div className="space-y-3 p-6">
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-8 w-full" />
+          </div>
         ) : isError ? (
-          <Column padding="l" gap="8">
-            <Text variant="body-strong-s" onBackground="danger-medium">
+          <div className="p-6">
+            <p className="text-sm font-medium text-destructive">
               Failed to load categories
-            </Text>
-            <Text variant="body-default-s" onBackground="neutral-weak">
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">
               {error instanceof Error ? error.message : "Unknown error"}
-            </Text>
-          </Column>
-        ) : (data?.categories.length ?? 0) === 0 ? (
-          <Column padding="xl" horizontal="center" gap="4">
-            <Text variant="body-strong-m">No categories yet</Text>
-            <Text variant="body-default-s" onBackground="neutral-weak">
+            </p>
+          </div>
+        ) : rows.length === 0 ? (
+          <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
+            <Tag className="size-10 text-muted-foreground/40" />
+            <p className="text-sm font-medium">No categories yet</p>
+            <p className="text-sm text-muted-foreground">
               Create one to get started.
-            </Text>
-          </Column>
+            </p>
+          </div>
         ) : (
-          <Table data={tableData} />
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[120px]">Spend ID</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>Spend name</TableHead>
+                <TableHead>Group</TableHead>
+                <TableHead>Lifecycle</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="w-[120px] text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.map((c) => (
+                <TableRow key={c.id}>
+                  <TableCell className="font-mono text-xs text-muted-foreground">
+                    {c.spendId ?? "—"}
+                  </TableCell>
+                  <TableCell className="font-medium">{c.name}</TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {c.spendName ?? "—"}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {c.spendGrp ?? "—"}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {c.spendLifegrp ?? "—"}
+                  </TableCell>
+                  <TableCell>
+                    {c.status ? (
+                      <Badge variant="secondary">{c.status}</Badge>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-1">
+                      <Button asChild variant="ghost" size="icon">
+                        <Link href={`/categories/${c.id}`} aria-label="Edit">
+                          <Pencil className="size-4" />
+                        </Link>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setConfirmId(c.id)}
+                        aria-label="Delete"
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         )}
       </Card>
 
-      <Dialog
-        isOpen={confirmId !== null}
-        onClose={() => setConfirmId(null)}
-        title="Delete category?"
-        description="This cannot be undone. Categories referenced by spending, budget, or rules cannot be deleted."
-        footer={
-          <Row gap="8" horizontal="end" fillWidth>
+      <Dialog open={confirmId !== null} onOpenChange={(o) => !o && setConfirmId(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete category?</DialogTitle>
+            <DialogDescription>
+              This cannot be undone. Categories referenced by spending, budget,
+              or rules cannot be deleted.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
             <Button
-              variant="tertiary"
+              variant="ghost"
               onClick={() => setConfirmId(null)}
               disabled={del.isPending}
             >
               Cancel
             </Button>
             <Button
-              variant="danger"
+              variant="destructive"
               onClick={confirmDelete}
-              loading={del.isPending}
+              disabled={del.isPending}
             >
-              Delete
+              {del.isPending ? "Deleting…" : "Delete"}
             </Button>
-          </Row>
-        }
-      />
-    </Column>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }

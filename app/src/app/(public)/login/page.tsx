@@ -2,14 +2,17 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
-  Button,
   Card,
-  Column,
-  Heading,
-  PasswordInput,
-  Text,
-} from "@once-ui-system/core";
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -44,49 +47,41 @@ export default function LoginPage() {
   }
 
   return (
-    <Column fillWidth fillHeight horizontal="center" vertical="center" padding="l">
-      <Card
-        maxWidth={24}
-        padding="l"
-        radius="l"
-        border="neutral-medium"
-        background="surface"
-      >
-        <Column gap="16" fillWidth>
-          <Column gap="4">
-            <Heading variant="heading-strong-l">Gringotts</Heading>
-            <Text variant="body-default-s" onBackground="neutral-weak">
-              Enter the dashboard password.
-            </Text>
-          </Column>
-          <form onSubmit={onSubmit}>
-            <Column gap="16">
-              <PasswordInput
+    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+      <Card className="w-full max-w-sm">
+        <CardHeader>
+          <CardTitle className="text-xl">Gringotts</CardTitle>
+          <CardDescription>Enter the dashboard password.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={onSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
                 id="password"
-                label="Password"
+                type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoFocus
+                autoComplete="current-password"
               />
-              {error ? (
-                <Text variant="body-default-s" onBackground="danger-medium">
-                  {error}
-                </Text>
-              ) : null}
-              <Button
-                type="submit"
-                variant="primary"
-                size="m"
-                loading={submitting}
-                disabled={!password}
-                fillWidth
-              >
-                Sign in
-              </Button>
-            </Column>
+            </div>
+            {error ? (
+              <p className="text-sm text-destructive">{error}</p>
+            ) : null}
+            <Button type="submit" className="w-full" disabled={!password || submitting}>
+              {submitting ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  Signing in…
+                </>
+              ) : (
+                "Sign in"
+              )}
+            </Button>
           </form>
-        </Column>
+        </CardContent>
       </Card>
-    </Column>
+    </div>
   );
 }

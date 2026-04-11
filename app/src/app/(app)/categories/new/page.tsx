@@ -1,7 +1,13 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Card, Column, useToast } from "@once-ui-system/core";
+import { toast } from "sonner";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   CategoryForm,
   type CategoryFormValues,
@@ -24,33 +30,34 @@ function toInput(values: CategoryFormValues) {
 export default function NewCategoryPage() {
   const router = useRouter();
   const create = useCreateCategory();
-  const { addToast } = useToast();
 
   async function onSubmit(values: CategoryFormValues) {
     try {
       await create.mutateAsync(toInput(values));
-      addToast({ variant: "success", message: "Category created" });
+      toast.success("Category created");
       router.push("/categories");
       router.refresh();
     } catch (err) {
-      addToast({
-        variant: "danger",
-        message: err instanceof Error ? err.message : "Create failed",
-      });
+      toast.error(err instanceof Error ? err.message : "Create failed");
     }
   }
 
   return (
-    <Column gap="20" fillWidth>
-      <PageHeader title="New category" />
-      <Card padding="l" radius="l" border="neutral-medium" background="surface">
-        <CategoryForm
-          submitLabel="Create"
-          submitting={create.isPending}
-          onSubmit={onSubmit}
-          onCancel={() => router.push("/categories")}
-        />
+    <div className="space-y-6">
+      <PageHeader title="New category" description="Create a new spend category." />
+      <Card className="max-w-2xl">
+        <CardHeader>
+          <CardTitle className="text-base">Details</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <CategoryForm
+            submitLabel="Create"
+            submitting={create.isPending}
+            onSubmit={onSubmit}
+            onCancel={() => router.push("/categories")}
+          />
+        </CardContent>
       </Card>
-    </Column>
+    </div>
   );
 }

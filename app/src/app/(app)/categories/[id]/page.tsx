@@ -2,22 +2,20 @@
 
 import { use } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import {
   Card,
-  Column,
-  Skeleton,
-  Text,
-  useToast,
-} from "@once-ui-system/core";
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   CategoryForm,
   type CategoryFormValues,
 } from "@/components/categories/CategoryForm";
 import { PageHeader } from "@/components/common/PageHeader";
-import {
-  useCategory,
-  useUpdateCategory,
-} from "@/hooks/use-categories";
+import { useCategory, useUpdateCategory } from "@/hooks/use-categories";
 
 function toPatch(values: CategoryFormValues) {
   const empty = (s: string | undefined) => (s && s.length > 0 ? s : null);
@@ -40,46 +38,47 @@ export default function EditCategoryPage({
   const router = useRouter();
   const { data, isLoading, isError, error } = useCategory(id);
   const update = useUpdateCategory();
-  const { addToast } = useToast();
 
   async function onSubmit(values: CategoryFormValues) {
     try {
       await update.mutateAsync({ id, patch: toPatch(values) });
-      addToast({ variant: "success", message: "Saved" });
+      toast.success("Saved");
       router.push("/categories");
       router.refresh();
     } catch (err) {
-      addToast({
-        variant: "danger",
-        message: err instanceof Error ? err.message : "Update failed",
-      });
+      toast.error(err instanceof Error ? err.message : "Update failed");
     }
   }
 
   return (
-    <Column gap="20" fillWidth>
+    <div className="space-y-6">
       <PageHeader title="Edit category" />
-      <Card padding="l" radius="l" border="neutral-medium" background="surface">
-        {isLoading ? (
-          <Column gap="12">
-            <Skeleton shape="line" width="l" height="s" />
-            <Skeleton shape="line" width="xl" height="s" />
-            <Skeleton shape="line" width="xl" height="s" />
-          </Column>
-        ) : isError || !data ? (
-          <Text variant="body-default-s" onBackground="danger-medium">
-            {error instanceof Error ? error.message : "Not found"}
-          </Text>
-        ) : (
-          <CategoryForm
-            initial={data.category}
-            submitLabel="Save"
-            submitting={update.isPending}
-            onSubmit={onSubmit}
-            onCancel={() => router.push("/categories")}
-          />
-        )}
+      <Card className="max-w-2xl">
+        <CardHeader>
+          <CardTitle className="text-base">Details</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="space-y-3">
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-8 w-2/3" />
+            </div>
+          ) : isError || !data ? (
+            <p className="text-sm text-destructive">
+              {error instanceof Error ? error.message : "Not found"}
+            </p>
+          ) : (
+            <CategoryForm
+              initial={data.category}
+              submitLabel="Save"
+              submitting={update.isPending}
+              onSubmit={onSubmit}
+              onCancel={() => router.push("/categories")}
+            />
+          )}
+        </CardContent>
       </Card>
-    </Column>
+    </div>
   );
 }

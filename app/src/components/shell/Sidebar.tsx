@@ -2,60 +2,47 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Column, Heading, Text } from "@once-ui-system/core";
 import {
-  HiChartPie,
-  HiReceiptRefund,
-  HiArrowUpTray,
-  HiFlag,
-  HiArrowTrendingUp,
-  HiCurrencyDollar,
-  HiTag,
-  HiSparkles,
-} from "react-icons/hi2";
-import type { ComponentType } from "react";
-import styles from "./Sidebar.module.css";
+  LayoutDashboard,
+  Receipt,
+  Upload,
+  Target,
+  TrendingUp,
+  PieChart,
+  Tags,
+  Sparkles,
+  type LucideIcon,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type NavItem = {
   href: string;
   label: string;
-  Icon: ComponentType<{ size?: number }>;
+  Icon: LucideIcon;
 };
 
 const NAV: NavItem[] = [
-  { href: "/dashboard", label: "Dashboard", Icon: HiChartPie },
-  { href: "/spending", label: "Spending", Icon: HiReceiptRefund },
-  { href: "/spending/import", label: "Import", Icon: HiArrowUpTray },
-  { href: "/budget", label: "Budget", Icon: HiFlag },
-  { href: "/investments", label: "Investments", Icon: HiArrowTrendingUp },
-  { href: "/allocations", label: "Allocations", Icon: HiCurrencyDollar },
-  { href: "/categories", label: "Categories", Icon: HiTag },
-  { href: "/rules", label: "Rules", Icon: HiSparkles },
+  { href: "/dashboard", label: "Dashboard", Icon: LayoutDashboard },
+  { href: "/spending", label: "Spending", Icon: Receipt },
+  { href: "/spending/import", label: "Import", Icon: Upload },
+  { href: "/budget", label: "Budget", Icon: Target },
+  { href: "/investments", label: "Investments", Icon: TrendingUp },
+  { href: "/allocations", label: "Allocations", Icon: PieChart },
+  { href: "/categories", label: "Categories", Icon: Tags },
+  { href: "/rules", label: "Rules", Icon: Sparkles },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
+
   return (
-    <Column
-      as="nav"
-      padding="16"
-      gap="16"
-      borderRight="neutral-medium"
-      background="surface"
-      style={{
-        width: 220,
-        flexShrink: 0,
-        position: "sticky",
-        top: 0,
-        alignSelf: "flex-start",
-        height: "100vh",
-        overflowY: "auto",
-      }}
-    >
-      <Heading variant="heading-strong-m" paddingX="8" paddingTop="4">
-        Gringotts
-      </Heading>
-      <Column gap="2">
+    <aside className="sticky top-0 hidden h-screen w-56 shrink-0 border-r border-sidebar-border bg-sidebar text-sidebar-foreground lg:block">
+      <div className="flex h-14 items-center border-b border-sidebar-border px-5">
+        <Link href="/dashboard" className="text-base font-semibold tracking-tight">
+          Gringotts
+        </Link>
+      </div>
+      <nav className="flex flex-col gap-0.5 p-3">
         {NAV.map(({ href, label, Icon }) => {
           const active =
             pathname === href ||
@@ -64,14 +51,19 @@ export function Sidebar() {
             <Link
               key={href}
               href={href}
-              className={`${styles.item} ${active ? styles.active : ""}`}
+              className={cn(
+                "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
+                active
+                  ? "bg-sidebar-primary/15 text-sidebar-primary"
+                  : "text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+              )}
             >
-              <Icon size={18} />
-              <Text variant="body-default-s">{label}</Text>
+              <Icon className="size-4" />
+              <span>{label}</span>
             </Link>
           );
         })}
-      </Column>
-    </Column>
+      </nav>
+    </aside>
   );
 }
