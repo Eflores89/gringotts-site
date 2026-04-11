@@ -156,3 +156,18 @@ export async function sumSpendingByMonth(year: number) {
     .groupBy(spending.mm)
     .orderBy(spending.mm);
 }
+
+export async function sumSpendingByCategory(year: number, month?: number) {
+  await requireAuth();
+  const conds = [like(spending.chargeDate, `${year}-%`)];
+  if (month != null) conds.push(eq(spending.mm, month));
+  return db
+    .select({
+      categoryId: spending.categoryId,
+      total: sql<number>`COALESCE(SUM(${spending.euroMoney}), 0)`,
+      count: sql<number>`COUNT(*)`,
+    })
+    .from(spending)
+    .where(and(...conds))
+    .groupBy(spending.categoryId);
+}

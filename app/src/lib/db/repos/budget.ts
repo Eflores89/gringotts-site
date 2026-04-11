@@ -1,6 +1,6 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
-import { and, desc, eq, like } from "drizzle-orm";
+import { and, desc, eq, like, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { budget } from "@/db/schema";
 import { requireAuth } from "@/lib/auth";
@@ -101,4 +101,17 @@ export async function deleteBudget(id: string) {
     .where(eq(budget.id, id))
     .returning({ id: budget.id });
   return result.length > 0;
+}
+
+export async function sumBudgetByMonth(year: number) {
+  await requireAuth();
+  return db
+    .select({
+      mm: budget.mm,
+      total: sql<number>`COALESCE(SUM(${budget.euroMoney}), 0)`,
+    })
+    .from(budget)
+    .where(like(budget.chargeDate, `${year}-%`))
+    .groupBy(budget.mm)
+    .orderBy(budget.mm);
 }
