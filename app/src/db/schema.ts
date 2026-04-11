@@ -1,4 +1,11 @@
-import { sqliteTable, text, integer, real, index } from "drizzle-orm/sqlite-core";
+import {
+  sqliteTable,
+  text,
+  integer,
+  real,
+  index,
+  primaryKey,
+} from "drizzle-orm/sqlite-core";
 
 export const categories = sqliteTable(
   "categories",
@@ -93,22 +100,35 @@ export const investments = sqliteTable(
   (t) => [index("investments_ticker_idx").on(t.ticker)],
 );
 
-export const allocations = sqliteTable(
-  "allocations",
+export const allocations = sqliteTable("allocations", {
+  id: text("id").primaryKey(),
+  notionId: text("notion_id").unique(),
+  name: text("name"),
+  allocationType: text("allocation_type"),
+  category: text("category"),
+  percentage: real("percentage"),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+});
+
+// Junction table: many-to-many between allocations and investments.
+// A single allocation row (e.g. "Tech 30%") can apply to multiple
+// investments that share the same exposure.
+export const allocationInvestments = sqliteTable(
+  "allocation_investments",
   {
-    id: text("id").primaryKey(),
-    notionId: text("notion_id").unique(),
-    name: text("name"),
+    allocationId: text("allocation_id")
+      .notNull()
+      .references(() => allocations.id, { onDelete: "cascade" }),
     investmentId: text("investment_id")
       .notNull()
       .references(() => investments.id, { onDelete: "cascade" }),
-    allocationType: text("allocation_type"),
-    category: text("category"),
-    percentage: real("percentage"),
-    createdAt: integer("created_at").notNull(),
-    updatedAt: integer("updated_at").notNull(),
   },
-  (t) => [index("allocations_investment_idx").on(t.investmentId)],
+  (t) => [
+    primaryKey({ columns: [t.allocationId, t.investmentId] }),
+    index("alloc_inv_allocation_idx").on(t.allocationId),
+    index("alloc_inv_investment_idx").on(t.investmentId),
+  ],
 );
 
 export const merchantRules = sqliteTable(
@@ -151,6 +171,8 @@ export type Investment = typeof investments.$inferSelect;
 export type NewInvestment = typeof investments.$inferInsert;
 export type Allocation = typeof allocations.$inferSelect;
 export type NewAllocation = typeof allocations.$inferInsert;
+export type AllocationInvestment = typeof allocationInvestments.$inferSelect;
+export type NewAllocationInvestment = typeof allocationInvestments.$inferInsert;
 export type MerchantRule = typeof merchantRules.$inferSelect;
 export type NewMerchantRule = typeof merchantRules.$inferInsert;
 export type SpendeeRule = typeof spendeeRules.$inferSelect;

@@ -12,6 +12,7 @@ import {
   budget,
   investments,
   allocations,
+  allocationInvestments,
 } from "../src/db/schema";
 
 const notion = new Client({ auth: process.env.NOTION_TOKEN });
@@ -272,10 +273,12 @@ async function migrateInvestments(): Promise<Map<string, string>> {
 
 async function migrateAllocations(invMap: Map<string, string>) {
   console.log("\n[4/4] allocations");
-  const rows: Array<typeof allocations.$inferInsert> = [];
+  const allocRows: Array<typeof allocations.$inferInsert> = [];
+  const junctionRows: Array<typeof allocationInvestments.$inferInsert> = [];
   let count = 0;
   let skippedNoInv = 0;
-  let multiRelation = 0;
+  let droppedInvRefs = 0;
+  let totalLinks = 0;
 
   for await (const page of queryAll(ALLOCATIONS_DB)) {
     count++;
@@ -285,33 +288,45 @@ async function migrateAllocations(invMap: Map<string, string>) {
       skippedNoInv++;
       continue;
     }
-    if (invIds.length > 1) multiRelation++;
-    const newInv = invMap.get(invIds[0]);
-    if (!newInv) {
+    const resolved = invIds
+      .map((nid) => invMap.get(nid))
+      .filter((x): x is string => !!x);
+    droppedInvRefs += invIds.length - resolved.length;
+    if (resolved.length === 0) {
       skippedNoInv++;
       continue;
     }
-    rows.push({
-      id: randomUUID(),
+    const allocId = randomUUID();
+    allocRows.push({
+      id: allocId,
       notionId: page.id,
       name: title(props.name) || null,
-      investmentId: newInv,
       allocationType: select(props.allocation_type),
       category: select(props.category),
       percentage: num(props.percentage),
       createdAt: Date.parse(page.created_time) || now(),
       updatedAt: now(),
     });
+    for (const invId of resolved) {
+      junctionRows.push({ allocationId: allocId, investmentId: invId });
+      totalLinks++;
+    }
   }
 
-  for (let i = 0; i < rows.length; i += 100) {
+  for (let i = 0; i < allocRows.length; i += 100) {
     await db
       .insert(allocations)
-      .values(rows.slice(i, i + 100))
+      .values(allocRows.slice(i, i + 100))
       .onConflictDoNothing({ target: allocations.notionId });
   }
+  for (let i = 0; i < junctionRows.length; i += 200) {
+    await db
+      .insert(allocationInvestments)
+      .values(junctionRows.slice(i, i + 200))
+      .onConflictDoNothing();
+  }
   console.log(
-    `  notion=${count} inserted=${rows.length} skipped_no_inv=${skippedNoInv} multi_relation_warning=${multiRelation}`,
+    `  notion=${count} allocations=${allocRows.length} links=${totalLinks} skipped_no_inv=${skippedNoInv} dropped_inv_refs=${droppedInvRefs}`,
   );
 }
 
@@ -330,6 +345,7 @@ async function printSanityTotals() {
 async function reset() {
   console.log("[0/4] reset (delete all rows in FK order)");
   // Order matters: children first, then parents.
+  await db.run(sql`DELETE FROM allocation_investments`);
   await db.run(sql`DELETE FROM allocations`);
   await db.run(sql`DELETE FROM merchant_rules`);
   await db.run(sql`DELETE FROM spendee_rules`);
