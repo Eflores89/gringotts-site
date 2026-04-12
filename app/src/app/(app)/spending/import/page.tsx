@@ -40,6 +40,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/common/PageHeader";
 import { useCategories } from "@/hooks/use-categories";
+import { usePaymentMethods } from "@/hooks/use-payment-methods";
 import { apiFetch } from "@/lib/api-client";
 import { parseXlsxFiles, type ParsedRow } from "@/lib/xlsx-parser";
 import { formatMoney } from "@/lib/format";
@@ -53,7 +54,7 @@ type ReviewRow = CategorizedRow & {
 };
 
 type Filter = "all" | "uncategorized" | "rule";
-type SortKey = "date" | "description" | "amount" | "category" | "tier";
+type SortKey = "date" | "description" | "amount" | "category" | "method" | "tier";
 type SortState = { key: SortKey; dir: "asc" | "desc" } | null;
 
 const TIER_LABEL: Record<MatchTier, string> = {
@@ -86,6 +87,7 @@ const isUncategorized = (r: ReviewRow) =>
 export default function ImportPage() {
   const router = useRouter();
   const cats = useCategories();
+  const pm = usePaymentMethods();
   const [files, setFiles] = useState<File[]>([]);
   const [parsing, setParsing] = useState(false);
   const [previewing, setPreviewing] = useState(false);
@@ -102,6 +104,7 @@ export default function ImportPage() {
   const [sort, setSort] = useState<SortState>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkCategoryId, setBulkCategoryId] = useState<string>("");
+  const [bulkMethod, setBulkMethod] = useState<string>("");
 
   // Detect unique currencies present in the parsed data.
   const parsedCurrencies = useMemo(() => {
@@ -157,6 +160,10 @@ export default function ImportPage() {
           av = a.categoryName?.toLowerCase() ?? "";
           bv = b.categoryName?.toLowerCase() ?? "";
           break;
+        case "method":
+          av = (a.method ?? "").toLowerCase();
+          bv = (b.method ?? "").toLowerCase();
+          break;
         case "tier":
           av = TIER_ORDER[a.matchTier];
           bv = TIER_ORDER[b.matchTier];
@@ -193,6 +200,7 @@ export default function ImportPage() {
     setSort(null);
     setFilter("all");
     setBulkCategoryId("");
+    setBulkMethod("");
     setFxRates({ ...FX_TO_EUR });
     setMonthOverride("");
   }
@@ -262,6 +270,19 @@ export default function ImportPage() {
     });
     toast.success(`Updated ${ids.size} row${ids.size === 1 ? "" : "s"}`);
     setBulkCategoryId("");
+  }
+
+  function applyBulkMethod() {
+    if (!bulkMethod || visibleSelected.length === 0) return;
+    const ids = new Set(visibleSelected);
+    setReviewRows((prev) => {
+      if (!prev) return prev;
+      return prev.map((r) =>
+        ids.has(r._id) ? { ...r, method: bulkMethod } : r,
+      );
+    });
+    toast.success(`Updated ${ids.size} row${ids.size === 1 ? "" : "s"}`);
+    setBulkMethod("");
   }
 
   function applyBulkSkip(skip: boolean) {
@@ -622,6 +643,28 @@ export default function ImportPage() {
                 >
                   Apply category
                 </Button>
+                <Select
+                  value={bulkMethod}
+                  onValueChange={setBulkMethod}
+                >
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Set method to…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(pm.data?.methods ?? []).map((m) => (
+                      <SelectItem key={m.id} value={m.name}>
+                        {m.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  size="sm"
+                  onClick={applyBulkMethod}
+                  disabled={!bulkMethod}
+                >
+                  Apply method
+                </Button>
                 <Button
                   size="sm"
                   variant="outline"
@@ -701,6 +744,14 @@ export default function ImportPage() {
                         onClick={clickHeader}
                       />
                     </TableHead>
+                    <TableHead>
+                      <SortableHead
+                        label="Method"
+                        sortKey="method"
+                        sort={sort}
+                        onClick={clickHeader}
+                      />
+                    </TableHead>
                     <TableHead className="w-[80px]">Skip</TableHead>
                     <TableHead className="w-[100px]">Save rule</TableHead>
                   </TableRow>
@@ -753,6 +804,25 @@ export default function ImportPage() {
                         </Select>
                       </TableCell>
                       <TableCell>
+                        <Select
+                          value={r.method || ""}
+                          onValueChange={(v) =>
+                            updateRow(r._id, { method: v })
+                          }
+                        >
+                          <SelectTrigger className="w-[180px]">
+                            <SelectValue placeholder="—" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {(pm.data?.methods ?? []).map((m) => (
+                              <SelectItem key={m.id} value={m.name}>
+                                {m.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell>
                         <Checkbox
                           checked={r.skip}
                           onCheckedChange={(c) =>
@@ -776,7 +846,7 @@ export default function ImportPage() {
                   {(displayedRows?.length ?? 0) === 0 && (
                     <TableRow>
                       <TableCell
-                        colSpan={8}
+                        colSpan={9}
                         className="py-10 text-center text-sm text-muted-foreground"
                       >
                         No rows match this filter.
