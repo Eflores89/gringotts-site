@@ -51,11 +51,11 @@ const eur = (v: number) =>
   new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(v);
 
 const TOOLTIP_STYLE = {
-  background: "var(--popover)",
-  border: "1px solid var(--border)",
+  background: "#2a2a2a",
+  border: "1px solid #3a3a3a",
   borderRadius: 8,
   fontSize: 12,
-  color: "var(--popover-foreground)",
+  color: "#e5e5e5",
 };
 
 type K = "category" | "budget" | "spending" | "diff" | "pct";

@@ -53,11 +53,11 @@ export function TrendChart({ data }: { data: MonthPoint[] }) {
           <Tooltip
             cursor={{ fill: "var(--accent)" }}
             contentStyle={{
-              background: "var(--popover)",
-              border: "1px solid var(--border)",
+              background: "#2a2a2a",
+              border: "1px solid #3a3a3a",
               borderRadius: 8,
               fontSize: 12,
-              color: "var(--popover-foreground)",
+              color: "#e5e5e5",
             }}
             formatter={(v: number) => `€${eur(v)}`}
           />
