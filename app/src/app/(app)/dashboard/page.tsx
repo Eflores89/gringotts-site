@@ -17,18 +17,22 @@ import {
   sumSpendingByMonth,
 } from "@/lib/db/repos/spending";
 import { sumBudgetByMonth } from "@/lib/db/repos/budget";
+import { getPortfolioSummary } from "@/lib/investment-analytics";
 import { formatMoney } from "@/lib/format";
+import { DashboardTabs } from "./tabs";
 
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
   const year = new Date().getFullYear();
-  const [spendByMonth, budgetByMonth, spendByCat, cats] = await Promise.all([
-    sumSpendingByMonth(year),
-    sumBudgetByMonth(year),
-    sumSpendingByCategory(year),
-    listCategories(),
-  ]);
+  const [spendByMonth, budgetByMonth, spendByCat, cats, portfolio] =
+    await Promise.all([
+      sumSpendingByMonth(year),
+      sumBudgetByMonth(year),
+      sumSpendingByCategory(year),
+      listCategories(),
+      getPortfolioSummary(),
+    ]);
 
   // Merge spending + budget into one MonthPoint[] keyed on mm.
   const monthMap = new Map<number, MonthPoint>();
@@ -50,7 +54,6 @@ export default async function DashboardPage() {
   const currentMonth = new Date().getMonth() + 1;
   const thisMonth = trend.find((p) => p.mm === currentMonth);
 
-  // Category pie: top 8 categories YTD, the rest collapsed into "Other".
   const catName = new Map<string, string>();
   cats.forEach((c) => catName.set(c.id, c.name));
   const catSlices = spendByCat
@@ -67,13 +70,8 @@ export default async function DashboardPage() {
     top.push({ name: `Other (${catSlices.length - TOP})`, value: rest });
   }
 
-  return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Dashboard"
-        description={`Year-to-date overview for ${year}.`}
-      />
-
+  const spendingTab = (
+    <>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="YTD spending"
@@ -90,7 +88,6 @@ export default async function DashboardPage() {
           tone={ytdBudget - ytdSpending >= 0 ? "good" : "bad"}
         />
       </div>
-
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>
@@ -113,6 +110,19 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+    </>
+  );
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="Dashboard"
+        description={`Year-to-date overview for ${year}.`}
+      />
+      <DashboardTabs
+        spendingContent={spendingTab}
+        portfolioData={portfolio}
+      />
     </div>
   );
 }

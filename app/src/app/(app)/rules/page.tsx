@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Plus, Trash2, Save, X, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -27,13 +27,15 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { SortableHead } from "@/components/common/SortableHead";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/common/PageHeader";
 import { useCategories } from "@/hooks/use-categories";
+import { useSort } from "@/hooks/use-sort";
+import type { MerchantRule, SpendeeRule } from "@/db/schema";
 import {
   useCreateMerchantRule,
   useCreateSpendeeRule,
@@ -73,6 +75,8 @@ function categoryLabel(c: Category): string {
   return c.spendId ? `[${c.spendId}] ${c.name}` : c.name;
 }
 
+type MK = "pattern" | "spendId" | "source";
+
 function MerchantRulesTab() {
   const cats = useCategories();
   const { data, isLoading } = useMerchantRules();
@@ -86,6 +90,16 @@ function MerchantRulesTab() {
   const [editSpendId, setEditSpendId] = useState("");
   const [newPattern, setNewPattern] = useState("");
   const [newSpendId, setNewSpendId] = useState("");
+
+  const mAcc = useCallback(
+    (r: MerchantRule, key: MK): string =>
+      key === "pattern" ? r.pattern : key === "spendId" ? r.spendId : r.source,
+    [],
+  );
+  const { sorted: sortedRules, sort: mSort, toggle: mToggle } = useSort<MerchantRule, MK>(
+    data?.rules ?? [],
+    mAcc,
+  );
 
   const spendIdOptions = useMemo(
     () =>
@@ -186,14 +200,14 @@ function MerchantRulesTab() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Pattern</TableHead>
-                <TableHead>Spend ID</TableHead>
-                <TableHead>Source</TableHead>
-                <TableHead className="w-[140px] text-right">Actions</TableHead>
+                <SortableHead label="Pattern" sortKey="pattern" sort={mSort} onClick={mToggle} />
+                <SortableHead label="Spend ID" sortKey="spendId" sort={mSort} onClick={mToggle} />
+                <SortableHead label="Source" sortKey="source" sort={mSort} onClick={mToggle} />
+                <SortableHead label="" sortKey={"pattern" as MK} sort={null} onClick={() => {}} className="w-[140px]" />
               </TableRow>
             </TableHeader>
             <TableBody>
-              {(data?.rules ?? []).map((r) => {
+              {sortedRules.map((r) => {
                 const isEditing = editingId === r.id;
                 return (
                   <TableRow key={r.id}>
@@ -311,6 +325,8 @@ function MerchantRulesTab() {
   );
 }
 
+type SK = "spendeeCategory" | "spendId" | "source";
+
 function SpendeeRulesTab() {
   const cats = useCategories();
   const { data, isLoading } = useSpendeeRules();
@@ -324,6 +340,20 @@ function SpendeeRulesTab() {
   const [editSpendId, setEditSpendId] = useState("");
   const [newCategory, setNewCategory] = useState("");
   const [newSpendId, setNewSpendId] = useState("");
+
+  const sAcc = useCallback(
+    (r: SpendeeRule, key: SK): string =>
+      key === "spendeeCategory"
+        ? r.spendeeCategory
+        : key === "spendId"
+          ? r.spendId
+          : r.source,
+    [],
+  );
+  const { sorted: sortedRules, sort: sSort, toggle: sToggle } = useSort<SpendeeRule, SK>(
+    data?.rules ?? [],
+    sAcc,
+  );
 
   const spendIdOptions = useMemo(
     () =>
@@ -427,14 +457,14 @@ function SpendeeRulesTab() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Spendee category</TableHead>
-                <TableHead>Spend ID</TableHead>
-                <TableHead>Source</TableHead>
-                <TableHead className="w-[140px] text-right">Actions</TableHead>
+                <SortableHead label="Spendee category" sortKey="spendeeCategory" sort={sSort} onClick={sToggle} />
+                <SortableHead label="Spend ID" sortKey="spendId" sort={sSort} onClick={sToggle} />
+                <SortableHead label="Source" sortKey="source" sort={sSort} onClick={sToggle} />
+                <SortableHead label="" sortKey={"spendeeCategory" as SK} sort={null} onClick={() => {}} className="w-[140px]" />
               </TableRow>
             </TableHeader>
             <TableBody>
-              {(data?.rules ?? []).map((r) => {
+              {sortedRules.map((r) => {
                 const isEditing = editingId === r.id;
                 return (
                   <TableRow key={r.id}>

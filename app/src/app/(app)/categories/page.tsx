@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Tag } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -20,20 +20,41 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { SortableHead } from "@/components/common/SortableHead";
 import { PageHeader } from "@/components/common/PageHeader";
 import {
   useCategories,
   useDeleteCategory,
 } from "@/hooks/use-categories";
+import { useSort } from "@/hooks/use-sort";
+import type { Category } from "@/db/schema";
+
+type K = "spendId" | "name" | "spendName" | "group" | "lifecycle" | "status";
+
+const accessor = (c: Category, key: K): string =>
+  (key === "spendId"
+    ? c.spendId
+    : key === "name"
+      ? c.name
+      : key === "spendName"
+        ? c.spendName
+        : key === "group"
+          ? c.spendGrp
+          : key === "lifecycle"
+            ? c.spendLifegrp
+            : c.status) ?? "";
 
 export default function CategoriesPage() {
   const { data, isLoading, isError, error } = useCategories();
   const del = useDeleteCategory();
   const [confirmId, setConfirmId] = useState<string | null>(null);
+
+  const rows = data?.categories ?? [];
+  const acc = useCallback(accessor, []);
+  const { sorted, sort, toggle } = useSort<Category, K>(rows, acc);
 
   async function confirmDelete() {
     if (!confirmId) return;
@@ -45,8 +66,6 @@ export default function CategoriesPage() {
       toast.error(err instanceof Error ? err.message : "Delete failed");
     }
   }
-
-  const rows = data?.categories ?? [];
 
   return (
     <div className="space-y-6">
@@ -91,17 +110,17 @@ export default function CategoriesPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[120px]">Spend ID</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Spend name</TableHead>
-                <TableHead>Group</TableHead>
-                <TableHead>Lifecycle</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="w-[120px] text-right">Actions</TableHead>
+                <SortableHead label="Spend ID" sortKey="spendId" sort={sort} onClick={toggle} className="w-[120px]" />
+                <SortableHead label="Name" sortKey="name" sort={sort} onClick={toggle} />
+                <SortableHead label="Spend name" sortKey="spendName" sort={sort} onClick={toggle} />
+                <SortableHead label="Group" sortKey="group" sort={sort} onClick={toggle} />
+                <SortableHead label="Lifecycle" sortKey="lifecycle" sort={sort} onClick={toggle} />
+                <SortableHead label="Status" sortKey="status" sort={sort} onClick={toggle} />
+                <SortableHead label="" sortKey={"name" as K} sort={null} onClick={() => {}} className="w-[120px]" />
               </TableRow>
             </TableHeader>
             <TableBody>
-              {rows.map((c) => (
+              {sorted.map((c) => (
                 <TableRow key={c.id}>
                   <TableCell className="font-mono text-xs text-muted-foreground">
                     {c.spendId ?? "—"}

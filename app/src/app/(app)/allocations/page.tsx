@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, PieChart } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -20,16 +20,18 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { SortableHead } from "@/components/common/SortableHead";
 import { PageHeader } from "@/components/common/PageHeader";
 import {
   useAllocations,
   useDeleteAllocation,
+  type AllocationWithLinks,
 } from "@/hooks/use-allocations";
 import { useInvestments } from "@/hooks/use-investments";
+import { useSort } from "@/hooks/use-sort";
 
 export default function AllocationsPage() {
   const { data, isLoading, isError, error } = useAllocations();
@@ -54,7 +56,18 @@ export default function AllocationsPage() {
     }
   }
 
+  type K = "type" | "category" | "percentage";
   const rows = data?.allocations ?? [];
+  const allocAccessor = useCallback(
+    (r: AllocationWithLinks, key: K): string | number =>
+      key === "type"
+        ? r.allocation.allocationType ?? ""
+        : key === "category"
+          ? r.allocation.category ?? ""
+          : r.allocation.percentage ?? 0,
+    [],
+  );
+  const { sorted, sort, toggle } = useSort<AllocationWithLinks, K>(rows, allocAccessor);
 
   return (
     <div className="space-y-6">
@@ -96,15 +109,15 @@ export default function AllocationsPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Type</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead className="text-right">%</TableHead>
-                <TableHead>Investments</TableHead>
-                <TableHead className="w-[110px] text-right">Actions</TableHead>
+                <SortableHead label="Type" sortKey="type" sort={sort} onClick={toggle} />
+                <SortableHead label="Category" sortKey="category" sort={sort} onClick={toggle} />
+                <SortableHead label="%" sortKey="percentage" sort={sort} onClick={toggle} className="text-right" />
+                <SortableHead label="Investments" sortKey={"type" as K} sort={null} onClick={() => {}} />
+                <SortableHead label="" sortKey={"type" as K} sort={null} onClick={() => {}} className="w-[110px]" />
               </TableRow>
             </TableHeader>
             <TableBody>
-              {rows.map(({ allocation, investmentIds }) => (
+              {sorted.map(({ allocation, investmentIds }) => (
                 <TableRow key={allocation.id}>
                   <TableCell>
                     {allocation.allocationType ? (

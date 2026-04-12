@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -26,10 +26,10 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { SortableHead } from "@/components/common/SortableHead";
 import { PageHeader } from "@/components/common/PageHeader";
 import { useCategories } from "@/hooks/use-categories";
 import {
@@ -37,7 +37,9 @@ import {
   useDeleteBudget,
   type BudgetFilter,
 } from "@/hooks/use-budget";
+import { useSort } from "@/hooks/use-sort";
 import { formatMoney } from "@/lib/format";
+import type { Budget } from "@/db/schema";
 
 const ALL = "__all__";
 const MONTHS = [
@@ -75,7 +77,22 @@ export default function BudgetPage() {
     }
   }
 
+  type K = "date" | "description" | "category" | "amount" | "eur";
   const rows = data?.budget ?? [];
+  const budgetAccessor = useCallback(
+    (b: Budget, key: K): string | number =>
+      key === "date"
+        ? b.chargeDate
+        : key === "description"
+          ? b.transaction ?? ""
+          : key === "category"
+            ? catById.get(b.categoryId) ?? ""
+            : key === "amount"
+              ? b.amount
+              : (b.euroMoney ?? 0),
+    [catById],
+  );
+  const { sorted, sort, toggle } = useSort<Budget, K>(rows, budgetAccessor);
 
   return (
     <div className="space-y-6">
@@ -176,16 +193,16 @@ export default function BudgetPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[110px]">Date</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
-                <TableHead className="text-right">EUR</TableHead>
-                <TableHead className="w-[110px] text-right">Actions</TableHead>
+                <SortableHead label="Date" sortKey="date" sort={sort} onClick={toggle} className="w-[110px]" />
+                <SortableHead label="Description" sortKey="description" sort={sort} onClick={toggle} />
+                <SortableHead label="Category" sortKey="category" sort={sort} onClick={toggle} />
+                <SortableHead label="Amount" sortKey="amount" sort={sort} onClick={toggle} className="text-right" />
+                <SortableHead label="EUR" sortKey="eur" sort={sort} onClick={toggle} className="text-right" />
+                <SortableHead label="" sortKey={"date" as K} sort={null} onClick={() => {}} className="w-[110px]" />
               </TableRow>
             </TableHeader>
             <TableBody>
-              {rows.map((b) => (
+              {sorted.map((b) => (
                 <TableRow key={b.id}>
                   <TableCell className="text-muted-foreground">{b.chargeDate}</TableCell>
                   <TableCell className="font-medium">{b.transaction ?? "—"}</TableCell>
