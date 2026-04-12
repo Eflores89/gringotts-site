@@ -263,6 +263,7 @@ function DonutCard({
   slices: { name: string; value: number }[];
   suffix?: string;
 }) {
+  const total = slices.reduce((s, x) => s + x.value, 0);
   if (slices.length === 0)
     return (
       <Card>
@@ -299,11 +300,11 @@ function DonutCard({
               </Pie>
               <Tooltip
                 contentStyle={TOOLTIP_STYLE}
-                formatter={(v: number) =>
-                  suffix === "%"
-                    ? `${v.toFixed(1)}%`
-                    : `€${eur(v)}`
-                }
+                formatter={(v: number) => {
+                  const pct = total > 0 ? ((v / total) * 100).toFixed(1) : "0.0";
+                  if (suffix === "%") return `${v.toFixed(1)}% (of portfolio)`;
+                  return `€${eur(v)} · ${pct}%`;
+                }}
               />
               <Legend wrapperStyle={{ fontSize: 11, color: "var(--muted-foreground)" }} />
             </PieChart>
