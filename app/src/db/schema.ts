@@ -173,7 +173,59 @@ export type Allocation = typeof allocations.$inferSelect;
 export type NewAllocation = typeof allocations.$inferInsert;
 export type AllocationInvestment = typeof allocationInvestments.$inferSelect;
 export type NewAllocationInvestment = typeof allocationInvestments.$inferInsert;
+export const paymentMethods = sqliteTable("payment_methods", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+});
+
+export const income = sqliteTable(
+  "income",
+  {
+    id: text("id").primaryKey(),
+    description: text("description"),
+    amount: real("amount").notNull(),
+    currency: text("currency").notNull(),
+    chargeDate: text("charge_date").notNull(),
+    mm: integer("mm"),
+    euroMoney: real("euro_money"),
+    source: text("source"),
+    notes: text("notes"),
+    createdAt: integer("created_at").notNull(),
+    updatedAt: integer("updated_at").notNull(),
+  },
+  (t) => [
+    index("income_charge_date_idx").on(t.chargeDate),
+    index("income_mm_idx").on(t.mm),
+  ],
+);
+
+export const spendingReimbursements = sqliteTable(
+  "spending_reimbursements",
+  {
+    id: text("id").primaryKey(),
+    spendingId: text("spending_id")
+      .notNull()
+      .references(() => spending.id, { onDelete: "cascade" }),
+    amount: real("amount").notNull(),
+    currency: text("currency").notNull(),
+    euroMoney: real("euro_money"),
+    description: text("description"),
+    reimbursedDate: text("reimbursed_date"),
+    createdAt: integer("created_at").notNull(),
+    updatedAt: integer("updated_at").notNull(),
+  },
+  (t) => [index("reimb_spending_idx").on(t.spendingId)],
+);
+
 export type MerchantRule = typeof merchantRules.$inferSelect;
 export type NewMerchantRule = typeof merchantRules.$inferInsert;
 export type SpendeeRule = typeof spendeeRules.$inferSelect;
 export type NewSpendeeRule = typeof spendeeRules.$inferInsert;
+export type PaymentMethod = typeof paymentMethods.$inferSelect;
+export type NewPaymentMethod = typeof paymentMethods.$inferInsert;
+export type Income = typeof income.$inferSelect;
+export type NewIncome = typeof income.$inferInsert;
+export type SpendingReimbursement = typeof spendingReimbursements.$inferSelect;
+export type NewSpendingReimbursement = typeof spendingReimbursements.$inferInsert;

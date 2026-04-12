@@ -19,6 +19,7 @@ import {
 import { sumBudgetByMonth } from "@/lib/db/repos/budget";
 import { getPortfolioSummary } from "@/lib/investment-analytics";
 import { formatMoney } from "@/lib/format";
+import { BudgetVsSpending } from "@/components/dashboard/BudgetVsSpending";
 import { DashboardTabs } from "./tabs";
 
 export const dynamic = "force-dynamic";
@@ -110,6 +111,7 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+      <BudgetVsSpending year={year} />
     </>
   );
 

@@ -10,6 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ReimbursementsPanel } from "@/components/spending/ReimbursementsPanel";
 import {
   SpendingForm,
   type SpendingFormValues,
@@ -33,6 +34,7 @@ function toPatch(values: SpendingFormValues) {
     method: empty(values.method),
     spendName: empty(values.spendName),
     status: empty(values.status),
+    fxRate: Number(values.fxRate) || null,
   };
 }
 
@@ -90,6 +92,10 @@ export default function EditSpendingPage({
           )}
         </CardContent>
       </Card>
+
+      {entry.data?.spending && (
+        <ReimbursementsPanel spending={entry.data.spending} />
+      )}
     </div>
   );
 }

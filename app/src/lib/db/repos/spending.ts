@@ -1,6 +1,6 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
-import { and, desc, eq, like, sql } from "drizzle-orm";
+import { and, asc, desc, eq, like, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { spending } from "@/db/schema";
 import { requireAuth } from "@/lib/auth";
@@ -16,6 +16,7 @@ export type SpendingInput = {
   method?: string | null;
   spendName?: string | null;
   status?: string | null;
+  fxRate?: number | null;
 };
 
 export type SpendingFilter = {
@@ -45,10 +46,12 @@ export async function getSpendingById(id: string) {
   return row ?? null;
 }
 
-function computeDerived(input: Pick<SpendingInput, "amount" | "currency" | "chargeDate">) {
+function computeDerived(input: Pick<SpendingInput, "amount" | "currency" | "chargeDate" | "fxRate">) {
   return {
     mm: mmFromIsoDate(input.chargeDate),
-    euroMoney: toEuro(input.amount, input.currency),
+    euroMoney: input.fxRate
+      ? input.amount * input.fxRate
+      : toEuro(input.amount, input.currency),
   };
 }
 
@@ -114,6 +117,7 @@ export async function updateSpending(id: string, patch: Partial<SpendingInput>) 
     amount: patch.amount ?? current.amount,
     currency: patch.currency ?? current.currency,
     chargeDate: patch.chargeDate ?? current.chargeDate,
+    fxRate: patch.fxRate ?? null,
   };
   const derived = computeDerived(merged);
   const update: Record<string, unknown> = {

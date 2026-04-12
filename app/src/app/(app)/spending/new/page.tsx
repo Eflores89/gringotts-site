@@ -29,6 +29,7 @@ function toInput(values: SpendingFormValues) {
     method: empty(values.method),
     spendName: empty(values.spendName),
     status: empty(values.status),
+    fxRate: Number(values.fxRate) || null,
   };
 }
 

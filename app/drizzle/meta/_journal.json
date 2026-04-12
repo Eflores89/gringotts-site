@@ -15,6 +15,13 @@
       "when": 1775941044228,
       "tag": "0001_allocations_m2m",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1776003493713,
+      "tag": "0002_add_auxiliary_tables",
+      "breakpoints": true
     }
   ]
 }

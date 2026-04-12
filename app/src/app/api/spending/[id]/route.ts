@@ -18,6 +18,7 @@ const patchSchema = z.object({
   method: z.string().max(50).nullable().optional(),
   spendName: z.string().max(200).nullable().optional(),
   status: z.string().max(32).nullable().optional(),
+  fxRate: z.number().positive().nullable().optional(),
 });
 
 type Ctx = { params: Promise<{ id: string }> };

@@ -11,6 +11,7 @@ import {
   PieChart,
   Tags,
   Sparkles,
+  Settings,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -30,6 +31,7 @@ const NAV: NavItem[] = [
   { href: "/allocations", label: "Allocations", Icon: PieChart },
   { href: "/categories", label: "Categories", Icon: Tags },
   { href: "/rules", label: "Rules", Icon: Sparkles },
+  { href: "/auxiliary", label: "Auxiliary", Icon: Settings },
 ];
 
 export function Sidebar() {
