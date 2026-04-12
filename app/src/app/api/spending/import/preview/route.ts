@@ -17,13 +17,19 @@ const rowSchema = z.object({
 
 const bodySchema = z.object({
   rows: z.array(rowSchema).min(1).max(2000),
+  fxRates: z.record(z.string(), z.number().positive()).optional(),
+  monthOverride: z.number().int().min(1).max(12).nullable().optional(),
 });
 
 export async function POST(request: Request) {
   return handle(async () => {
     await requireAuth();
     const body = bodySchema.parse(await request.json());
-    const previews = await categorizeRows(body.rows);
+    const previews = await categorizeRows(
+      body.rows,
+      body.fxRates,
+      body.monthOverride ?? undefined,
+    );
     return { rows: previews, count: previews.length };
   });
 }

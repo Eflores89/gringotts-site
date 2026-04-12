@@ -35,6 +35,8 @@ const ruleSchema = z.discriminatedUnion("kind", [
 const bodySchema = z.object({
   rows: z.array(rowSchema).min(1).max(2000),
   saveRules: z.array(ruleSchema).default([]),
+  fxRates: z.record(z.string(), z.number().positive()).optional(),
+  monthOverride: z.number().int().min(1).max(12).nullable().optional(),
 });
 
 export async function POST(request: Request) {
@@ -53,8 +55,10 @@ export async function POST(request: Request) {
       chargeDate: r.chargeDate,
       moneyDate: r.moneyDate ?? null,
       method: r.method ?? null,
-      mm: mmFromIsoDate(r.chargeDate),
-      euroMoney: toEuro(r.amount, r.currency),
+      mm: body.monthOverride ?? mmFromIsoDate(r.chargeDate),
+      euroMoney: body.fxRates
+        ? r.amount * (body.fxRates[r.currency.toUpperCase()] ?? 1)
+        : toEuro(r.amount, r.currency),
       spendName: r.spendName ?? null,
       status: null,
       createdAt: now,

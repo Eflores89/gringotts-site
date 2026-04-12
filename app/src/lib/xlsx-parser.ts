@@ -36,9 +36,28 @@ function toIsoDate(value: unknown): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+function asString(value: unknown): string {
+  if (value == null) return "";
+  if (typeof value === "string") return value.trim();
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value).trim();
+  }
+  // Defensive — sheetjs sometimes returns rich-text objects.
+  return String(value).trim();
+}
+
+function asNumber(value: unknown): number {
+  if (typeof value === "number") return value;
+  if (typeof value === "string") {
+    const n = Number(value.replace(/,/g, ""));
+    return Number.isFinite(n) ? n : 0;
+  }
+  return 0;
+}
+
 function isExpense(row: Record<string, unknown>): boolean {
-  const type = row[COL.TYPE];
-  if (type === "Expense") return true;
+  const type = asString(row[COL.TYPE]).toLowerCase();
+  if (type === "expense") return true;
   const amount = row[COL.AMOUNT];
   return typeof amount === "number" && amount < 0;
 }
@@ -52,18 +71,15 @@ export async function parseXlsxFiles(files: File[]): Promise<ParsedRow[]> {
     const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet);
     for (const row of rows) {
       if (!isExpense(row)) continue;
-      const note =
-        (row[COL.NOTE] as string | undefined)?.trim() || "Unknown Transaction";
-      const rawAmount = row[COL.AMOUNT];
-      const amount =
-        typeof rawAmount === "number" ? Math.abs(rawAmount) : Number(rawAmount) || 0;
+      const note = asString(row[COL.NOTE]) || "Unknown Transaction";
+      const amount = Math.abs(asNumber(row[COL.AMOUNT]));
       all.push({
         transaction: note,
         amount,
-        currency: (row[COL.CURRENCY] as string | undefined) || "EUR",
+        currency: asString(row[COL.CURRENCY]) || "EUR",
         chargeDate: toIsoDate(row[COL.DATE]),
-        spendeeCategory: (row[COL.CATEGORY] as string | undefined) || "",
-        method: (row[COL.WALLET] as string | undefined) || "",
+        spendeeCategory: asString(row[COL.CATEGORY]),
+        method: asString(row[COL.WALLET]),
         sourceFile: file.name,
       });
     }

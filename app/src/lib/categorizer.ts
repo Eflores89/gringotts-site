@@ -40,6 +40,8 @@ const SPENDEE_IGNORE = new Set(["", "all-nonspec", "general"]);
  */
 export async function categorizeRows(
   rows: RowToCategorize[],
+  fxRates?: Record<string, number>,
+  monthOverride?: number,
 ): Promise<CategorizedRow[]> {
   const [merchants, spendees, cats] = await Promise.all([
     db.select().from(merchantRules),
@@ -113,8 +115,10 @@ export async function categorizeRows(
       categoryName,
       matchedRule,
       matchTier,
-      euroMoney: toEuro(row.amount, row.currency),
-      mm: mmFromIsoDate(row.chargeDate),
+      euroMoney: fxRates
+        ? row.amount * (fxRates[row.currency.toUpperCase()] ?? 1)
+        : toEuro(row.amount, row.currency),
+      mm: monthOverride ?? mmFromIsoDate(row.chargeDate),
     };
   });
 }
