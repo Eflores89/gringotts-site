@@ -15,11 +15,11 @@ export type CategorySlice = {
 };
 
 const COLORS = [
-  "var(--chart-1)",
-  "var(--chart-2)",
-  "var(--chart-3)",
-  "var(--chart-4)",
-  "var(--chart-5)",
+  "#34d399",
+  "#facc15",
+  "#22d3ee",
+  "#86efac",
+  "#d4a574",
 ];
 
 const eur = (v: number) =>
@@ -62,7 +62,7 @@ export function CategoryPieChart({ data }: { data: CategorySlice[] }) {
             formatter={(v: number) => `€${eur(v)}`}
           />
           <Legend
-            wrapperStyle={{ fontSize: 12, color: "var(--muted-foreground)" }}
+            wrapperStyle={{ fontSize: 12, color: "#999" }}
           />
         </PieChart>
       </ResponsiveContainer>

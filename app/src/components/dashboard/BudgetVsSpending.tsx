@@ -160,10 +160,10 @@ export function BudgetVsSpending({ year: initialYear }: { year: number }) {
             <div className="h-72 w-full">
               <ResponsiveContainer>
                 <BarChart data={chartData} margin={{ left: 10, right: 10 }}>
-                  <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
+                  <CartesianGrid stroke="#3a3a3a" strokeDasharray="3 3" vertical={false} />
                   <XAxis
                     dataKey="name"
-                    stroke="var(--muted-foreground)"
+                    stroke="#999"
                     fontSize={10}
                     tickLine={false}
                     angle={-30}
@@ -171,7 +171,7 @@ export function BudgetVsSpending({ year: initialYear }: { year: number }) {
                     height={60}
                   />
                   <YAxis
-                    stroke="var(--muted-foreground)"
+                    stroke="#999"
                     fontSize={11}
                     tickFormatter={(v) => `€${eur(v)}`}
                   />
@@ -180,8 +180,8 @@ export function BudgetVsSpending({ year: initialYear }: { year: number }) {
                     formatter={(v: number) => `€${eur(v)}`}
                   />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
-                  <Bar dataKey="Budget" fill="var(--chart-2)" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="Spending" fill="var(--chart-1)" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Budget" fill="#facc15" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Spending" fill="#34d399" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>

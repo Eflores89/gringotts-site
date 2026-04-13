@@ -35,23 +35,23 @@ export function TrendChart({ data }: { data: MonthPoint[] }) {
     <div className="h-72 w-full">
       <ResponsiveContainer>
         <BarChart data={points} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-          <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
+          <CartesianGrid stroke="#3a3a3a" strokeDasharray="3 3" vertical={false} />
           <XAxis
             dataKey="name"
-            stroke="var(--muted-foreground)"
+            stroke="#999"
             fontSize={12}
             tickLine={false}
             axisLine={false}
           />
           <YAxis
-            stroke="var(--muted-foreground)"
+            stroke="#999"
             fontSize={12}
             tickLine={false}
             axisLine={false}
             tickFormatter={(v) => `€${eur(v)}`}
           />
           <Tooltip
-            cursor={{ fill: "var(--accent)" }}
+            cursor={{ fill: "#404040" }}
             contentStyle={{
               background: "#2a2a2a",
               border: "1px solid #3a3a3a",
@@ -62,10 +62,10 @@ export function TrendChart({ data }: { data: MonthPoint[] }) {
             formatter={(v: number) => `€${eur(v)}`}
           />
           <Legend
-            wrapperStyle={{ fontSize: 12, color: "var(--muted-foreground)" }}
+            wrapperStyle={{ fontSize: 12, color: "#999" }}
           />
-          <Bar dataKey="Budget" fill="var(--chart-2)" radius={[4, 4, 0, 0]} />
-          <Bar dataKey="Spending" fill="var(--chart-1)" radius={[4, 4, 0, 0]} />
+          <Bar dataKey="Budget" fill="#facc15" radius={[4, 4, 0, 0]} />
+          <Bar dataKey="Spending" fill="#34d399" radius={[4, 4, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>

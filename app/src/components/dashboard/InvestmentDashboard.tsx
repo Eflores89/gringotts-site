@@ -40,12 +40,12 @@ import type {
 import { formatAmount, formatMoney } from "@/lib/format";
 
 const COLORS = [
-  "var(--chart-1)",
-  "var(--chart-2)",
-  "var(--chart-3)",
-  "var(--chart-4)",
-  "var(--chart-5)",
-  "var(--chart-1)",
+  "#34d399",
+  "#facc15",
+  "#22d3ee",
+  "#86efac",
+  "#d4a574",
+  "#34d399",
   "#f59e0b",
   "#ec4899",
   "#14b8a6",
@@ -306,7 +306,7 @@ function DonutCard({
                   return `€${eur(v)} · ${pct}%`;
                 }}
               />
-              <Legend wrapperStyle={{ fontSize: 11, color: "var(--muted-foreground)" }} />
+              <Legend wrapperStyle={{ fontSize: 11, color: "#999" }} />
             </PieChart>
           </ResponsiveContainer>
         </div>
@@ -327,17 +327,17 @@ function GainLossBar({ holdings }: { holdings: PortfolioHolding[] }) {
     <div style={{ height: Math.max(200, data.length * 32) }} className="w-full">
       <ResponsiveContainer>
         <BarChart data={data} layout="vertical" margin={{ left: 60, right: 20 }}>
-          <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" horizontal={false} />
+          <CartesianGrid stroke="#3a3a3a" strokeDasharray="3 3" horizontal={false} />
           <XAxis
             type="number"
-            stroke="var(--muted-foreground)"
+            stroke="#999"
             fontSize={11}
             tickFormatter={(v) => `€${eur(v)}`}
           />
           <YAxis
             type="category"
             dataKey="name"
-            stroke="var(--muted-foreground)"
+            stroke="#999"
             fontSize={11}
             width={55}
           />
@@ -349,7 +349,7 @@ function GainLossBar({ holdings }: { holdings: PortfolioHolding[] }) {
             {data.map((d, i) => (
               <Cell
                 key={i}
-                fill={d.gainLoss >= 0 ? "var(--chart-1)" : "var(--destructive)"}
+                fill={d.gainLoss >= 0 ? "#34d399" : "#f87171"}
               />
             ))}
           </Bar>
@@ -370,10 +370,10 @@ function HistoryChart({ history }: { history: { label: string; value: number }[]
     <div className="h-56 w-full">
       <ResponsiveContainer>
         <LineChart data={history}>
-          <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
-          <XAxis dataKey="label" stroke="var(--muted-foreground)" fontSize={10} />
+          <CartesianGrid stroke="#3a3a3a" strokeDasharray="3 3" vertical={false} />
+          <XAxis dataKey="label" stroke="#999" fontSize={10} />
           <YAxis
-            stroke="var(--muted-foreground)"
+            stroke="#999"
             fontSize={10}
             tickFormatter={(v) => `€${eur(v)}`}
           />
@@ -381,8 +381,8 @@ function HistoryChart({ history }: { history: { label: string; value: number }[]
           <Line
             type="monotone"
             dataKey="value"
-            stroke="var(--chart-1)"
-            fill="var(--chart-1)"
+            stroke="#34d399"
+            fill="#34d399"
             fillOpacity={0.1}
             strokeWidth={2}
             dot={history.length <= 24}
@@ -404,10 +404,10 @@ function ProjectionChart({
     <div className="h-56 w-full">
       <ResponsiveContainer>
         <LineChart data={data}>
-          <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
-          <XAxis dataKey="label" stroke="var(--muted-foreground)" fontSize={10} />
+          <CartesianGrid stroke="#3a3a3a" strokeDasharray="3 3" vertical={false} />
+          <XAxis dataKey="label" stroke="#999" fontSize={10} />
           <YAxis
-            stroke="var(--muted-foreground)"
+            stroke="#999"
             fontSize={10}
             tickFormatter={(v) => `€${eur(v)}`}
           />
@@ -417,7 +417,7 @@ function ProjectionChart({
             type="monotone"
             dataKey="liquid"
             name="Liquid"
-            stroke="var(--chart-1)"
+            stroke="#34d399"
             strokeWidth={2}
             dot={false}
           />
@@ -426,7 +426,7 @@ function ProjectionChart({
               type="monotone"
               dataKey="withUnvested"
               name="With unvested"
-              stroke="var(--chart-2)"
+              stroke="#facc15"
               strokeWidth={2}
               strokeDasharray="6 3"
               dot={false}
