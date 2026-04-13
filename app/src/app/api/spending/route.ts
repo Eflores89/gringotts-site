@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { handle } from "@/lib/api";
-import { createSpending, listSpending } from "@/lib/db/repos/spending";
+import { createSpendingPublic, listSpending } from "@/lib/db/repos/spending";
+import { requireAuth } from "@/lib/auth";
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Expected YYYY-MM-DD");
 
@@ -35,7 +36,8 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   return handle(async () => {
     const body = createSchema.parse(await request.json());
-    const row = await createSpending(body);
+    // Public — no auth required so /quick-spend works without login.
+    const row = await createSpendingPublic(body);
     return { spending: row };
   });
 }

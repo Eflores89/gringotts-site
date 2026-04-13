@@ -1,8 +1,9 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { Loader2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -80,6 +81,13 @@ export function LoginForm() {
               )}
             </Button>
           </form>
+          <div className="mt-4 text-center">
+            <Button variant="outline" className="w-full" asChild>
+              <Link href="/quick-spend">
+                <Plus className="size-4" /> Quick spend (no login)
+              </Link>
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { handle } from "@/lib/api";
-import { createCategory, listCategories } from "@/lib/db/repos/categories";
+import { createCategory, listCategoriesPublic } from "@/lib/db/repos/categories";
 
 const createSchema = z.object({
   name: z.string().min(1).max(200),
@@ -15,7 +15,7 @@ export async function GET(request: Request) {
   return handle(async () => {
     const url = new URL(request.url);
     const status = url.searchParams.get("status") ?? undefined;
-    const rows = await listCategories({ status });
+    const rows = await listCategoriesPublic({ status });
     return { categories: rows, count: rows.length };
   });
 }

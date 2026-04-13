@@ -55,11 +55,10 @@ function computeDerived(input: Pick<SpendingInput, "amount" | "currency" | "char
   };
 }
 
-export async function createSpending(input: SpendingInput) {
-  await requireAuth();
+function buildSpendingRow(input: SpendingInput) {
   const now = Date.now();
   const derived = computeDerived(input);
-  const row = {
+  return {
     id: randomUUID(),
     notionId: null,
     transaction: input.transaction ?? null,
@@ -76,6 +75,19 @@ export async function createSpending(input: SpendingInput) {
     createdAt: now,
     updatedAt: now,
   };
+}
+
+/** Auth-gated create (used by the normal app). */
+export async function createSpending(input: SpendingInput) {
+  await requireAuth();
+  const row = buildSpendingRow(input);
+  await db.insert(spending).values(row);
+  return row;
+}
+
+/** Public create (no auth check — used by /quick-spend). */
+export async function createSpendingPublic(input: SpendingInput) {
+  const row = buildSpendingRow(input);
   await db.insert(spending).values(row);
   return row;
 }

@@ -16,6 +16,11 @@ export type CategoryInput = {
 
 export async function listCategories(opts?: { status?: string }) {
   await requireAuth();
+  return listCategoriesPublic(opts);
+}
+
+/** No auth — used by /quick-spend to populate the category dropdown. */
+export async function listCategoriesPublic(opts?: { status?: string }) {
   const where = opts?.status ? eq(categories.status, opts.status) : undefined;
   return db
     .select()

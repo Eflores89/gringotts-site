@@ -6,9 +6,12 @@ const SESSION_COOKIE = "gringotts_session";
 // Public paths that must never redirect even if the cookie is missing.
 const PUBLIC_PATHS = new Set<string>([
   "/login",
+  "/quick-spend",
   "/api/auth/login",
   "/api/auth/me",
   "/api/auth/logout",
+  "/api/spending",
+  "/api/categories",
 ]);
 
 export function proxy(request: NextRequest) {
