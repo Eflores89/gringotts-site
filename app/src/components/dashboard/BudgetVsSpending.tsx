@@ -201,55 +201,109 @@ export function BudgetVsSpending({ year: initialYear }: { year: number }) {
             No data for this period.
           </div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <SortableHead label="" sortKey={"category" as K} sort={null} onClick={() => {}} className="w-[32px]" />
-                <SortableHead label="Category" sortKey="category" sort={sort} onClick={toggle} />
-                <SortableHead label="Budget" sortKey="budget" sort={sort} onClick={toggle} className="text-right" />
-                <SortableHead label="Spending" sortKey="spending" sort={sort} onClick={toggle} className="text-right" />
-                <SortableHead label="Difference" sortKey="diff" sort={sort} onClick={toggle} className="text-right" />
-                <SortableHead label="% Used" sortKey="pct" sort={sort} onClick={toggle} className="text-right" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sorted.map((r) => (
-                <ComparisonRow
-                  key={r.categoryId}
-                  row={r}
-                  year={year}
-                  month={month}
-                  expanded={expanded === r.categoryId}
-                  onToggle={() =>
-                    setExpanded((prev) =>
-                      prev === r.categoryId ? null : r.categoryId,
-                    )
-                  }
-                />
-              ))}
-              {/* Totals */}
-              <TableRow className="border-t-2 border-border font-semibold">
-                <TableCell />
-                <TableCell>Total</TableCell>
-                <TableCell className="text-right font-mono">
-                  {formatMoney(totalBudget, "EUR")}
-                </TableCell>
-                <TableCell className="text-right font-mono">
-                  {formatMoney(totalSpending, "EUR")}
-                </TableCell>
-                <TableCell
-                  className={`text-right font-mono ${totalBudget - totalSpending >= 0 ? "text-emerald-500" : "text-destructive"}`}
-                >
-                  {formatMoney(totalBudget - totalSpending, "EUR")}
-                </TableCell>
-                <TableCell className="text-right font-mono">
-                  {totalBudget > 0
-                    ? `${((totalSpending / totalBudget) * 100).toFixed(0)}%`
-                    : "—"}
-                </TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
+          <>
+            {/* Desktop table */}
+            <div className="hidden md:block">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <SortableHead label="" sortKey={"category" as K} sort={null} onClick={() => {}} className="w-[32px]" />
+                    <SortableHead label="Category" sortKey="category" sort={sort} onClick={toggle} />
+                    <SortableHead label="Budget" sortKey="budget" sort={sort} onClick={toggle} className="text-right" />
+                    <SortableHead label="Spending" sortKey="spending" sort={sort} onClick={toggle} className="text-right" />
+                    <SortableHead label="Diff" sortKey="diff" sort={sort} onClick={toggle} className="text-right" />
+                    <SortableHead label="%" sortKey="pct" sort={sort} onClick={toggle} className="text-right" />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sorted.map((r) => (
+                    <ComparisonRow
+                      key={r.categoryId}
+                      row={r}
+                      year={year}
+                      month={month}
+                      expanded={expanded === r.categoryId}
+                      onToggle={() =>
+                        setExpanded((prev) =>
+                          prev === r.categoryId ? null : r.categoryId,
+                        )
+                      }
+                    />
+                  ))}
+                  <TableRow className="border-t-2 border-border font-semibold">
+                    <TableCell />
+                    <TableCell>Total</TableCell>
+                    <TableCell className="text-right font-mono">{formatMoney(totalBudget, "EUR")}</TableCell>
+                    <TableCell className="text-right font-mono">{formatMoney(totalSpending, "EUR")}</TableCell>
+                    <TableCell className={`text-right font-mono ${totalBudget - totalSpending >= 0 ? "text-emerald-500" : "text-destructive"}`}>
+                      {formatMoney(totalBudget - totalSpending, "EUR")}
+                    </TableCell>
+                    <TableCell className="text-right font-mono">
+                      {totalBudget > 0 ? `${((totalSpending / totalBudget) * 100).toFixed(0)}%` : "—"}
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </div>
+            {/* Mobile card list */}
+            <div className="divide-y divide-border md:hidden">
+              {sorted.map((r) => {
+                const pctColor =
+                  r.pctUsed == null ? "" : r.pctUsed <= 80 ? "text-emerald-500" : r.pctUsed <= 100 ? "text-yellow-500" : "text-destructive";
+                return (
+                  <div
+                    key={r.categoryId}
+                    className="cursor-pointer space-y-2 px-4 py-3"
+                    onClick={() =>
+                      setExpanded((prev) => (prev === r.categoryId ? null : r.categoryId))
+                    }
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-sm">{r.categoryName}</span>
+                      {r.pctUsed != null && (
+                        <span className={`text-xs font-mono ${pctColor}`}>{r.pctUsed.toFixed(0)}%</span>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 text-xs">
+                      <div>
+                        <span className="text-muted-foreground">Budget</span>
+                        <p className="font-mono">{formatMoney(r.budgetEur, "EUR")}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Spent</span>
+                        <p className="font-mono">{formatMoney(r.spendingEur, "EUR")}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Diff</span>
+                        <p className={`font-mono ${r.diff >= 0 ? "text-emerald-500" : "text-destructive"}`}>
+                          {formatMoney(r.diff, "EUR")}
+                        </p>
+                      </div>
+                    </div>
+                    {expanded === r.categoryId && (
+                      <MobileDrillDown categoryId={r.categoryId} year={year} month={month} />
+                    )}
+                  </div>
+                );
+              })}
+              <div className="grid grid-cols-3 gap-2 px-4 py-3 text-xs font-semibold border-t-2 border-border">
+                <div>
+                  <span className="text-muted-foreground">Budget</span>
+                  <p className="font-mono">{formatMoney(totalBudget, "EUR")}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Spent</span>
+                  <p className="font-mono">{formatMoney(totalSpending, "EUR")}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Diff</span>
+                  <p className={`font-mono ${totalBudget - totalSpending >= 0 ? "text-emerald-500" : "text-destructive"}`}>
+                    {formatMoney(totalBudget - totalSpending, "EUR")}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </>
         )}
       </Card>
     </div>
@@ -380,5 +434,48 @@ function ComparisonRow({
         </TableRow>
       )}
     </>
+  );
+}
+
+function MobileDrillDown({
+  categoryId,
+  year,
+  month,
+}: {
+  categoryId: string;
+  year: number;
+  month?: number;
+}) {
+  const { data, isLoading } = useQuery({
+    queryKey: ["drilldown", categoryId, year, month],
+    queryFn: () => {
+      const p = new URLSearchParams({ categoryId, year: String(year) });
+      if (month) p.set("month", String(month));
+      return apiFetch<CategoryDrillDown>(`/api/dashboard/drilldown?${p}`);
+    },
+  });
+  if (isLoading) return <Skeleton className="h-6 w-full" />;
+  if (!data?.items.length) return <p className="text-xs text-muted-foreground">No items.</p>;
+  return (
+    <div className="mt-1 space-y-1 rounded bg-muted/30 p-2">
+      {data.items.map((item) => (
+        <div key={item.id} className="flex items-center justify-between text-xs">
+          <div className="flex items-center gap-1.5">
+            <Badge variant={item.kind === "budget" ? "outline" : "secondary"} className="text-[10px] px-1 py-0">
+              {item.kind === "budget" ? "B" : "S"}
+            </Badge>
+            <span className="truncate max-w-[140px]">{item.transaction ?? "—"}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="font-mono">{formatMoney(item.euroMoney, "EUR")}</span>
+            <Button asChild variant="ghost" size="icon" className="h-6 w-6">
+              <Link href={item.kind === "spending" ? `/spending/${item.id}` : `/budget/${item.id}`}>
+                <Pencil className="size-3" />
+              </Link>
+            </Button>
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }

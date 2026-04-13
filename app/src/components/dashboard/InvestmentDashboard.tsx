@@ -40,16 +40,16 @@ import type {
 import { formatAmount, formatMoney } from "@/lib/format";
 
 const COLORS = [
-  "#34d399",
-  "#facc15",
-  "#22d3ee",
-  "#86efac",
-  "#d4a574",
-  "#34d399",
-  "#f59e0b",
-  "#ec4899",
-  "#14b8a6",
-  "#6366f1",
+  "#34d399", // emerald
+  "#f59e0b", // amber
+  "#3b82f6", // blue
+  "#ef4444", // red
+  "#a855f7", // purple
+  "#ec4899", // pink
+  "#14b8a6", // teal
+  "#f97316", // orange
+  "#6366f1", // indigo
+  "#eab308", // yellow
 ];
 
 const eur = (v: number) =>

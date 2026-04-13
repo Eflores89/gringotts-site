@@ -15,11 +15,14 @@ export type CategorySlice = {
 };
 
 const COLORS = [
-  "#34d399",
-  "#facc15",
-  "#22d3ee",
-  "#86efac",
-  "#d4a574",
+  "#34d399", // emerald
+  "#f59e0b", // amber
+  "#3b82f6", // blue
+  "#ef4444", // red
+  "#a855f7", // purple
+  "#ec4899", // pink
+  "#14b8a6", // teal
+  "#f97316", // orange
 ];
 
 const eur = (v: number) =>
