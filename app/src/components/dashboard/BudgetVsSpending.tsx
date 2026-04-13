@@ -177,7 +177,7 @@ export function BudgetVsSpending({ year: initialYear }: { year: number }) {
                   />
                   <Tooltip
                     contentStyle={TOOLTIP_STYLE}
-                    formatter={(v: number) => `€${eur(v)}`}
+                    formatter={(v) => `€${eur(Number(v))}`}
                   />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
                   <Bar dataKey="Budget" fill="#facc15" radius={[4, 4, 0, 0]} />

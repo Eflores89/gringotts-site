@@ -300,10 +300,11 @@ function DonutCard({
               </Pie>
               <Tooltip
                 contentStyle={TOOLTIP_STYLE}
-                formatter={(v: number) => {
-                  const pct = total > 0 ? ((v / total) * 100).toFixed(1) : "0.0";
-                  if (suffix === "%") return `${v.toFixed(1)}% (of portfolio)`;
-                  return `€${eur(v)} · ${pct}%`;
+                formatter={(v) => {
+                  const n = Number(v);
+                  const pct = total > 0 ? ((n / total) * 100).toFixed(1) : "0.0";
+                  if (suffix === "%") return `${n.toFixed(1)}% (of portfolio)`;
+                  return `€${eur(n)} · ${pct}%`;
                 }}
               />
               <Legend wrapperStyle={{ fontSize: 11, color: "#999" }} />
@@ -343,7 +344,7 @@ function GainLossBar({ holdings }: { holdings: PortfolioHolding[] }) {
           />
           <Tooltip
             contentStyle={TOOLTIP_STYLE}
-            formatter={(v: number) => `€${eur(v)}`}
+            formatter={(v) => `€${eur(Number(v))}`}
           />
           <Bar dataKey="gainLoss" radius={[0, 4, 4, 0]}>
             {data.map((d, i) => (
@@ -377,7 +378,7 @@ function HistoryChart({ history }: { history: { label: string; value: number }[]
             fontSize={10}
             tickFormatter={(v) => `€${eur(v)}`}
           />
-          <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number) => `€${eur(v)}`} />
+          <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v) => `€${eur(Number(v))}`} />
           <Line
             type="monotone"
             dataKey="value"
@@ -411,7 +412,7 @@ function ProjectionChart({
             fontSize={10}
             tickFormatter={(v) => `€${eur(v)}`}
           />
-          <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number) => `€${eur(v)}`} />
+          <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v) => `€${eur(Number(v))}`} />
           <Legend wrapperStyle={{ fontSize: 11 }} />
           <Line
             type="monotone"

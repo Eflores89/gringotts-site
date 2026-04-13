@@ -59,7 +59,7 @@ export function TrendChart({ data }: { data: MonthPoint[] }) {
               fontSize: 12,
               color: "#e5e5e5",
             }}
-            formatter={(v: number) => `€${eur(v)}`}
+            formatter={(v) => `€${eur(Number(v))}`}
           />
           <Legend
             wrapperStyle={{ fontSize: 12, color: "#999" }}

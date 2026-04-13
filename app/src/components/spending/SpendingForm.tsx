@@ -30,7 +30,7 @@ const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Expected YYYY-MM-DD");
 
 export const spendingFormSchema = z.object({
   transaction: z.string().max(500).optional().or(z.literal("")),
-  amount: z.coerce.number().finite(),
+  amount: z.number().finite(),
   currency: z.string().min(1).max(8),
   categoryId: z.string().uuid("Select a category"),
   chargeDate: isoDate,
@@ -38,7 +38,7 @@ export const spendingFormSchema = z.object({
   method: z.string().max(50).optional().or(z.literal("")),
   spendName: z.string().max(200).optional().or(z.literal("")),
   status: z.string().max(32).optional().or(z.literal("")),
-  fxRate: z.coerce.number().positive("Must be > 0"),
+  fxRate: z.number().positive("Must be > 0"),
 });
 export type SpendingFormValues = z.infer<typeof spendingFormSchema>;
 

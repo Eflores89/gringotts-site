@@ -26,7 +26,7 @@ import type { Investment } from "@/db/schema";
 import { CURRENCIES } from "@/lib/fx";
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().or(z.literal(""));
-const optNum = z.coerce.number().optional().or(z.literal(""));
+const optNum = z.number().optional().or(z.literal(""));
 
 export const investmentFormSchema = z.object({
   name: z.string().min(1).max(200),

@@ -30,7 +30,7 @@ export const allocationFormSchema = z.object({
   name: z.string().max(200).optional().or(z.literal("")),
   allocationType: z.enum(["industry", "geography"]),
   category: z.string().min(1).max(100),
-  percentage: z.coerce.number().min(0).max(100),
+  percentage: z.number().min(0).max(100),
   investmentIds: z.array(z.string().uuid()).min(1, "Select at least one investment"),
 });
 export type AllocationFormValues = z.infer<typeof allocationFormSchema>;

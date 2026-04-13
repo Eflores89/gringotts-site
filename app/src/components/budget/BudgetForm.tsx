@@ -29,7 +29,7 @@ const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
 export const budgetFormSchema = z.object({
   transaction: z.string().max(500).optional().or(z.literal("")),
-  amount: z.coerce.number().finite(),
+  amount: z.number().finite(),
   currency: z.string().min(1).max(8),
   categoryId: z.string().uuid("Select a category"),
   chargeDate: isoDate,
