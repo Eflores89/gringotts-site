@@ -87,6 +87,20 @@ export function useDeleteInvestment() {
   });
 }
 
+export function useCopyAllocations(targetInvestmentId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (sourceId: string) =>
+      apiFetch<{ copied: number }>(
+        `/api/investments/${targetInvestmentId}/copy-allocations`,
+        { method: "POST", body: JSON.stringify({ sourceId }) },
+      ),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["allocations"] });
+    },
+  });
+}
+
 export function useRefreshPrices() {
   const qc = useQueryClient();
   return useMutation({

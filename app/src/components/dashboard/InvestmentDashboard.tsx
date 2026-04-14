@@ -128,8 +128,8 @@ export function InvestmentDashboard({ data }: Props) {
         <StatCard label="Unvested" value={formatMoney(data.unvestedValue, "EUR")} />
       </div>
 
-      {/* Row 1: Asset type + Allocation breakdown */}
-      <div className="grid gap-4 lg:grid-cols-3">
+      {/* Row 1: Asset type + Allocation breakdowns */}
+      <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
         <DonutCard title="By asset type" slices={data.byAssetType.map((s) => ({ name: s.name, value: s.value }))} />
         <DonutCard
           title="Industry allocation"
@@ -142,6 +142,14 @@ export function InvestmentDashboard({ data }: Props) {
         <DonutCard
           title="Geography allocation"
           slices={data.geographyAllocations.map((a) => ({
+            name: a.category,
+            value: a.percentage,
+          }))}
+          suffix="%"
+        />
+        <DonutCard
+          title="Fund allocation"
+          slices={data.fundAllocations.map((a) => ({
             name: a.category,
             value: a.percentage,
           }))}

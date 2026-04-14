@@ -93,7 +93,10 @@ export default function EditInvestmentPage({
         </CardContent>
       </Card>
 
-      <InvestmentAllocationsPanel investmentId={id} />
+      <InvestmentAllocationsPanel
+        investmentId={id}
+        ticker={inv.data?.investment.ticker}
+      />
     </div>
   );
 }

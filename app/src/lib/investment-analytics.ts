@@ -45,6 +45,7 @@ export type PortfolioSummary = {
   byAssetType: { name: string; value: number }[];
   industryAllocations: AllocationSlice[];
   geographyAllocations: AllocationSlice[];
+  fundAllocations: AllocationSlice[];
   monthlyHistory: { label: string; value: number }[];
 };
 
@@ -156,6 +157,7 @@ export async function getPortfolioSummary(): Promise<PortfolioSummary> {
 
   const industryAllocations = calcWeighted("industry");
   const geographyAllocations = calcWeighted("geography");
+  const fundAllocations = calcWeighted("fund");
 
   // Monthly history: approximate from purchase dates to now using cost basis
   const monthlyHistory: { label: string; value: number }[] = [];
@@ -193,6 +195,7 @@ export async function getPortfolioSummary(): Promise<PortfolioSummary> {
     byAssetType,
     industryAllocations,
     geographyAllocations,
+    fundAllocations,
     monthlyHistory,
   };
 }

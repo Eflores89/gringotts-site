@@ -176,6 +176,40 @@ export async function deleteAllocation(id: string) {
   return result.length > 0;
 }
 
+/**
+ * Link `targetInvestmentId` to every allocation that `sourceInvestmentId`
+ * is already linked to. Existing links are preserved — this only adds
+ * missing ones. Returns the number of new links created.
+ */
+export async function copyAllocationLinks(
+  sourceInvestmentId: string,
+  targetInvestmentId: string,
+) {
+  await requireAuth();
+  const sourceLinks = await db
+    .select({ id: allocationInvestments.allocationId })
+    .from(allocationInvestments)
+    .where(eq(allocationInvestments.investmentId, sourceInvestmentId));
+  if (sourceLinks.length === 0) return 0;
+
+  const existingTargetLinks = await db
+    .select({ id: allocationInvestments.allocationId })
+    .from(allocationInvestments)
+    .where(eq(allocationInvestments.investmentId, targetInvestmentId));
+  const already = new Set(existingTargetLinks.map((l) => l.id));
+
+  const toInsert = sourceLinks
+    .filter((l) => !already.has(l.id))
+    .map((l) => ({
+      allocationId: l.id,
+      investmentId: targetInvestmentId,
+    }));
+
+  if (toInsert.length === 0) return 0;
+  await db.insert(allocationInvestments).values(toInsert);
+  return toInsert.length;
+}
+
 export async function countAllocationLinks() {
   await requireAuth();
   const [row] = await db

@@ -1,7 +1,9 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ExternalLink, PieChart } from "lucide-react";
+import { toast } from "sonner";
+import { Copy, ExternalLink, PieChart } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,16 +12,69 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAllocations } from "@/hooks/use-allocations";
+import {
+  useCopyAllocations,
+  useInvestments,
+} from "@/hooks/use-investments";
 
 export function InvestmentAllocationsPanel({
   investmentId,
+  ticker,
 }: {
   investmentId: string;
+  ticker?: string | null;
 }) {
   const { data, isLoading } = useAllocations({ investmentId });
+  const inv = useInvestments();
+  const copy = useCopyAllocations(investmentId);
+  const [open, setOpen] = useState(false);
+  const [sourceId, setSourceId] = useState<string>("");
+
   const rows = data?.allocations ?? [];
+
+  // Prefer investments with the same ticker (minus the current one).
+  const candidates = useMemo(() => {
+    const all = (inv.data?.investments ?? []).filter(
+      (i) => i.id !== investmentId,
+    );
+    if (!ticker) return all;
+    const sameTicker = all.filter((i) => i.ticker && i.ticker === ticker);
+    const rest = all.filter((i) => !i.ticker || i.ticker !== ticker);
+    return [...sameTicker, ...rest];
+  }, [inv.data, investmentId, ticker]);
+
+  async function onCopy() {
+    if (!sourceId) return;
+    try {
+      const res = await copy.mutateAsync(sourceId);
+      if (res.copied === 0) {
+        toast.info("No new allocations — all source links already applied.");
+      } else {
+        toast.success(`Copied ${res.copied} allocation link(s)`);
+      }
+      setOpen(false);
+      setSourceId("");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Copy failed");
+    }
+  }
 
   return (
     <Card className="max-w-3xl">
@@ -27,15 +82,21 @@ export function InvestmentAllocationsPanel({
         <div className="space-y-1">
           <CardTitle className="text-base">Allocations</CardTitle>
           <p className="text-sm text-muted-foreground">
-            Industry/geography splits this holding belongs to.
+            Industry, geography, and fund splits this holding belongs to.
           </p>
         </div>
-        <Button asChild variant="outline" size="sm">
-          <Link href="/allocations">
-            <ExternalLink className="size-4" />
-            Manage all
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
+            <Copy className="size-4" />
+            Copy allocations
+          </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link href="/allocations">
+              <ExternalLink className="size-4" />
+              Manage all
+            </Link>
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -78,6 +139,49 @@ export function InvestmentAllocationsPanel({
           </ul>
         )}
       </CardContent>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Copy allocations from…</DialogTitle>
+            <DialogDescription>
+              Pick another holding. Every allocation linked to it will also be
+              linked to this one (existing links are kept).
+              {ticker ? ` Matches for ticker "${ticker}" appear first.` : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-2">
+            <Select value={sourceId} onValueChange={setSourceId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select an investment…" />
+              </SelectTrigger>
+              <SelectContent>
+                {candidates.map((i) => (
+                  <SelectItem key={i.id} value={i.id}>
+                    {i.ticker ? `[${i.ticker}] ` : ""}
+                    {i.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => setOpen(false)}
+              disabled={copy.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={onCopy}
+              disabled={!sourceId || copy.isPending}
+            >
+              {copy.isPending ? "Copying…" : "Copy"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

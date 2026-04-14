@@ -29,7 +29,7 @@ import { numericOnChange } from "@/lib/utils";
 
 export const allocationFormSchema = z.object({
   name: z.string().max(200).optional().or(z.literal("")),
-  allocationType: z.enum(["industry", "geography"]),
+  allocationType: z.enum(["industry", "geography", "fund"]),
   category: z.string().min(1).max(100),
   percentage: z.number().min(0).max(100),
   investmentIds: z.array(z.string().uuid()).min(1, "Select at least one investment"),
@@ -56,7 +56,7 @@ export function AllocationForm({
     defaultValues: {
       name: initial?.allocation.name ?? "",
       allocationType:
-        (initial?.allocation.allocationType as "industry" | "geography") ??
+        (initial?.allocation.allocationType as "industry" | "geography" | "fund") ??
         "industry",
       category: initial?.allocation.category ?? "",
       percentage: (initial?.allocation.percentage as number | undefined) ?? 0,
@@ -69,7 +69,7 @@ export function AllocationForm({
       form.reset({
         name: initial.allocation.name ?? "",
         allocationType:
-          (initial.allocation.allocationType as "industry" | "geography") ??
+          (initial.allocation.allocationType as "industry" | "geography" | "fund") ??
           "industry",
         category: initial.allocation.category ?? "",
         percentage: (initial.allocation.percentage as number | undefined) ?? 0,
@@ -97,6 +97,7 @@ export function AllocationForm({
                   <SelectContent>
                     <SelectItem value="industry">Industry</SelectItem>
                     <SelectItem value="geography">Geography</SelectItem>
+                    <SelectItem value="fund">Fund</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
