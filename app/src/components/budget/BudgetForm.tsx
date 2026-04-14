@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/select";
 import type { Budget, Category } from "@/db/schema";
 import { CURRENCIES } from "@/lib/fx";
+import { numericOnChange } from "@/lib/utils";
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
@@ -103,7 +104,12 @@ export function BudgetForm({
               <FormItem className="sm:col-span-2">
                 <FormLabel>Amount</FormLabel>
                 <FormControl>
-                  <Input type="number" step="0.01" {...field} />
+                  <Input
+                    type="number"
+                    step="0.01"
+                    {...field}
+                    onChange={numericOnChange(field.onChange)}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>

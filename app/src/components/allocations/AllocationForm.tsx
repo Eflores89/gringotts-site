@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import type { Investment } from "@/db/schema";
 import type { AllocationWithLinks } from "@/hooks/use-allocations";
+import { numericOnChange } from "@/lib/utils";
 
 export const allocationFormSchema = z.object({
   name: z.string().max(200).optional().or(z.literal("")),
@@ -109,7 +110,14 @@ export function AllocationForm({
               <FormItem>
                 <FormLabel>Percentage (0–100)</FormLabel>
                 <FormControl>
-                  <Input type="number" step="0.01" min="0" max="100" {...field} />
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="100"
+                    {...field}
+                    onChange={numericOnChange(field.onChange)}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>

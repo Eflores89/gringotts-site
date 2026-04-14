@@ -34,6 +34,7 @@ import {
 import { apiFetch } from "@/lib/api-client";
 import { CURRENCIES, FX_TO_EUR } from "@/lib/fx";
 import { formatAmount } from "@/lib/format";
+import { numericOnChange } from "@/lib/utils";
 import type { Category } from "@/db/schema";
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
@@ -170,7 +171,12 @@ export default function QuickSpendPage() {
                     <FormItem className="col-span-2">
                       <FormLabel>Amount</FormLabel>
                       <FormControl>
-                        <Input type="number" step="0.01" {...field} />
+                        <Input
+                          type="number"
+                          step="0.01"
+                          {...field}
+                          onChange={numericOnChange(field.onChange)}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -213,7 +219,12 @@ export default function QuickSpendPage() {
                     <FormItem>
                       <FormLabel>FX → EUR</FormLabel>
                       <FormControl>
-                        <Input type="number" step="any" {...field} />
+                        <Input
+                          type="number"
+                          step="any"
+                          {...field}
+                          onChange={numericOnChange(field.onChange, 1)}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

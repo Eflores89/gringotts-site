@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/select";
 import type { Investment } from "@/db/schema";
 import { CURRENCIES } from "@/lib/fx";
+import { numericOnChange } from "@/lib/utils";
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().or(z.literal(""));
 const optNum = z.number().optional().or(z.literal(""));
@@ -141,7 +142,12 @@ export function InvestmentForm({
               <FormItem>
                 <FormLabel>Quantity</FormLabel>
                 <FormControl>
-                  <Input type="number" step="any" {...field} />
+                  <Input
+                    type="number"
+                    step="any"
+                    {...field}
+                    onChange={numericOnChange(field.onChange, "")}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -154,7 +160,12 @@ export function InvestmentForm({
               <FormItem>
                 <FormLabel>Purchase price</FormLabel>
                 <FormControl>
-                  <Input type="number" step="0.01" {...field} />
+                  <Input
+                    type="number"
+                    step="0.01"
+                    {...field}
+                    onChange={numericOnChange(field.onChange, "")}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -167,7 +178,12 @@ export function InvestmentForm({
               <FormItem>
                 <FormLabel>Current price</FormLabel>
                 <FormControl>
-                  <Input type="number" step="0.01" {...field} />
+                  <Input
+                    type="number"
+                    step="0.01"
+                    {...field}
+                    onChange={numericOnChange(field.onChange, "")}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -230,7 +246,12 @@ export function InvestmentForm({
               <FormItem>
                 <FormLabel>Growth rate (%/yr)</FormLabel>
                 <FormControl>
-                  <Input type="number" step="0.01" {...field} />
+                  <Input
+                    type="number"
+                    step="0.01"
+                    {...field}
+                    onChange={numericOnChange(field.onChange, "")}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
