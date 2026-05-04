@@ -12,9 +12,12 @@ import {
   Tags,
   Sparkles,
   Settings,
+  PanelLeftClose,
   type LucideIcon,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useSidebar } from "./sidebar-context";
 
 type NavItem = {
   href: string;
@@ -36,13 +39,25 @@ const NAV: NavItem[] = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { collapsed, toggle } = useSidebar();
+
+  if (collapsed) return null;
 
   return (
     <aside className="sticky top-0 hidden h-screen w-56 shrink-0 border-r border-sidebar-border bg-sidebar text-sidebar-foreground lg:block">
-      <div className="flex h-14 items-center border-b border-sidebar-border px-5">
+      <div className="flex h-14 items-center justify-between border-b border-sidebar-border px-3 pl-5">
         <Link href="/dashboard" className="text-base font-semibold tracking-tight">
           Gringotts
         </Link>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggle}
+          aria-label="Hide sidebar"
+          className="size-7 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+        >
+          <PanelLeftClose className="size-4" />
+        </Button>
       </div>
       <nav className="flex flex-col gap-0.5 p-3">
         {NAV.map(({ href, label, Icon }) => {

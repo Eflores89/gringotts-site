@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, TrendingUp, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -25,18 +25,64 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { PageHeader } from "@/components/common/PageHeader";
+import { SortableHead } from "@/components/common/SortableHead";
+import { useSort } from "@/hooks/use-sort";
 import {
   useDeleteInvestment,
   useInvestments,
   useRefreshPrices,
+  type InvestmentListRow,
 } from "@/hooks/use-investments";
 import { formatAmount, formatMoney } from "@/lib/format";
+
+type SortKey =
+  | "name"
+  | "ticker"
+  | "type"
+  | "quantity"
+  | "cost"
+  | "current"
+  | "value"
+  | "date"
+  | "allocations";
+
+function rowValue(inv: InvestmentListRow): number | null {
+  return inv.quantity != null && inv.currentPrice != null
+    ? inv.quantity * inv.currentPrice
+    : null;
+}
 
 export default function InvestmentsPage() {
   const { data, isLoading, isError, error } = useInvestments();
   const del = useDeleteInvestment();
   const refresh = useRefreshPrices();
   const [confirmId, setConfirmId] = useState<string | null>(null);
+
+  const accessor = useCallback(
+    (inv: InvestmentListRow, key: SortKey): string | number | null => {
+      switch (key) {
+        case "name":
+          return inv.name.toLowerCase();
+        case "ticker":
+          return inv.ticker?.toLowerCase() ?? "";
+        case "type":
+          return inv.assetType?.toLowerCase() ?? "";
+        case "quantity":
+          return inv.quantity ?? 0;
+        case "cost":
+          return inv.purchasePrice ?? 0;
+        case "current":
+          return inv.currentPrice ?? 0;
+        case "value":
+          return rowValue(inv) ?? 0;
+        case "date":
+          return inv.purchaseDate ?? "";
+        case "allocations":
+          return inv.allocationCount;
+      }
+    },
+    [],
+  );
 
   async function confirmDelete() {
     if (!confirmId) return;
@@ -61,6 +107,10 @@ export default function InvestmentsPage() {
   }
 
   const rows = data?.investments ?? [];
+  const { sorted, sort, toggle } = useSort<InvestmentListRow, SortKey>(
+    rows,
+    accessor,
+  );
 
   return (
     <div className="space-y-6">
@@ -112,75 +162,153 @@ export default function InvestmentsPage() {
             <p className="text-sm font-medium">No investments yet</p>
           </div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Ticker</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead className="text-right">Quantity</TableHead>
-                <TableHead className="text-right">Cost</TableHead>
-                <TableHead className="text-right">Current</TableHead>
-                <TableHead className="text-right">Value</TableHead>
-                <TableHead className="w-[110px] text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((inv) => {
-                const value =
-                  inv.quantity != null && inv.currentPrice != null
-                    ? inv.quantity * inv.currentPrice
-                    : null;
+          <>
+            {/* Desktop table */}
+            <div className="hidden md:block">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <SortableHead label="Name" sortKey="name" sort={sort} onClick={toggle} />
+                    <SortableHead label="Ticker" sortKey="ticker" sort={sort} onClick={toggle} />
+                    <SortableHead label="Type" sortKey="type" sort={sort} onClick={toggle} />
+                    <SortableHead label="Date" sortKey="date" sort={sort} onClick={toggle} />
+                    <SortableHead label="Allocations" sortKey="allocations" sort={sort} onClick={toggle} />
+                    <SortableHead label="Quantity" sortKey="quantity" sort={sort} onClick={toggle} className="text-right" />
+                    <SortableHead label="Cost" sortKey="cost" sort={sort} onClick={toggle} className="text-right" />
+                    <SortableHead label="Current" sortKey="current" sort={sort} onClick={toggle} className="text-right" />
+                    <SortableHead label="Value" sortKey="value" sort={sort} onClick={toggle} className="text-right" />
+                    <TableHead className="w-[110px] text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sorted.map((inv) => {
+                    const value = rowValue(inv);
+                    return (
+                      <TableRow key={inv.id}>
+                        <TableCell className="font-medium">{inv.name}</TableCell>
+                        <TableCell className="font-mono text-xs">
+                          {inv.ticker ?? "—"}
+                        </TableCell>
+                        <TableCell>
+                          {inv.assetType ? (
+                            <Badge variant="outline">{inv.assetType}</Badge>
+                          ) : (
+                            "—"
+                          )}
+                        </TableCell>
+                        <TableCell className="font-mono text-xs">
+                          {inv.purchaseDate ?? "—"}
+                        </TableCell>
+                        <TableCell>
+                          <AllocationPill count={inv.allocationCount} />
+                        </TableCell>
+                        <TableCell className="text-right font-mono">
+                          {formatAmount(inv.quantity)}
+                        </TableCell>
+                        <TableCell className="text-right font-mono">
+                          {formatMoney(inv.purchasePrice, inv.currency)}
+                        </TableCell>
+                        <TableCell className="text-right font-mono">
+                          {formatMoney(inv.currentPrice, inv.currency)}
+                        </TableCell>
+                        <TableCell className="text-right font-mono">
+                          {formatMoney(value, inv.currency)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-1">
+                            <Button asChild variant="ghost" size="icon">
+                              <Link
+                                href={`/investments/${inv.id}`}
+                                aria-label="Edit"
+                              >
+                                <Pencil className="size-4" />
+                              </Link>
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setConfirmId(inv.id)}
+                              aria-label="Delete"
+                            >
+                              <Trash2 className="size-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Mobile card list */}
+            <ul className="divide-y divide-border md:hidden">
+              {sorted.map((inv) => {
+                const value = rowValue(inv);
                 return (
-                  <TableRow key={inv.id}>
-                    <TableCell className="font-medium">{inv.name}</TableCell>
-                    <TableCell className="font-mono text-xs">
-                      {inv.ticker ?? "—"}
-                    </TableCell>
-                    <TableCell>
-                      {inv.assetType ? (
-                        <Badge variant="outline">{inv.assetType}</Badge>
-                      ) : (
-                        "—"
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right font-mono">
-                      {formatAmount(inv.quantity)}
-                    </TableCell>
-                    <TableCell className="text-right font-mono">
-                      {formatMoney(inv.purchasePrice, inv.currency)}
-                    </TableCell>
-                    <TableCell className="text-right font-mono">
-                      {formatMoney(inv.currentPrice, inv.currency)}
-                    </TableCell>
-                    <TableCell className="text-right font-mono">
-                      {formatMoney(value, inv.currency)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button asChild variant="ghost" size="icon">
-                          <Link
-                            href={`/investments/${inv.id}`}
-                            aria-label="Edit"
-                          >
-                            <Pencil className="size-4" />
-                          </Link>
-                        </Button>
+                  <li key={inv.id}>
+                    <Link
+                      href={`/investments/${inv.id}`}
+                      className="block px-4 py-3 active:bg-accent/50"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium">
+                            {inv.name}
+                          </p>
+                          <p className="font-mono text-xs text-muted-foreground">
+                            {inv.ticker ?? "—"}
+                            {inv.purchaseDate && (
+                              <> · {inv.purchaseDate}</>
+                            )}
+                          </p>
+                        </div>
+                        <div className="flex flex-col items-end gap-1">
+                          <p className="font-mono text-sm font-semibold">
+                            {formatMoney(value, inv.currency)}
+                          </p>
+                          <div className="flex items-center gap-1">
+                            {inv.assetType && (
+                              <Badge variant="outline" className="text-[10px]">
+                                {inv.assetType}
+                              </Badge>
+                            )}
+                            <AllocationPill count={inv.allocationCount} />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mt-2 flex items-end justify-between gap-3">
+                        <p className="font-mono text-xs text-muted-foreground">
+                          {formatAmount(inv.quantity)}
+                          {" × "}
+                          {formatMoney(inv.currentPrice, inv.currency)}
+                          {inv.purchasePrice != null && (
+                            <>
+                              {" · cost "}
+                              {formatMoney(inv.purchasePrice, inv.currency)}
+                            </>
+                          )}
+                        </p>
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => setConfirmId(inv.id)}
+                          className="-mr-2 -my-1 size-8"
                           aria-label="Delete"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setConfirmId(inv.id);
+                          }}
                         >
                           <Trash2 className="size-4" />
                         </Button>
                       </div>
-                    </TableCell>
-                  </TableRow>
+                    </Link>
+                  </li>
                 );
               })}
-            </TableBody>
-          </Table>
+            </ul>
+          </>
         )}
       </Card>
 
@@ -212,5 +340,20 @@ export default function InvestmentsPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+function AllocationPill({ count }: { count: number }) {
+  if (count === 0) {
+    return (
+      <Badge variant="destructive" className="text-[10px]">
+        None
+      </Badge>
+    );
+  }
+  return (
+    <Badge variant="secondary" className="text-[10px]">
+      {count}
+    </Badge>
   );
 }

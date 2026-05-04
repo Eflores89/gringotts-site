@@ -1,8 +1,8 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
-import { and, asc, eq, isNotNull, sql } from "drizzle-orm";
+import { and, asc, eq, getTableColumns, isNotNull, sql } from "drizzle-orm";
 import { db } from "@/db/client";
-import { investments } from "@/db/schema";
+import { allocationInvestments, investments } from "@/db/schema";
 import { requireAuth } from "@/lib/auth";
 
 export type InvestmentInput = {
@@ -33,8 +33,18 @@ export async function listInvestments(filter: InvestmentFilter = {}) {
   // vestedOnly = vest_date is null OR vest_date <= today
   const today = new Date().toISOString().slice(0, 10);
   return db
-    .select()
+    .select({
+      ...getTableColumns(investments),
+      allocationCount:
+        sql<number>`count(${allocationInvestments.allocationId})`.as(
+          "allocation_count",
+        ),
+    })
     .from(investments)
+    .leftJoin(
+      allocationInvestments,
+      eq(allocationInvestments.investmentId, investments.id),
+    )
     .where(
       filter.vestedOnly
         ? and(
@@ -45,6 +55,7 @@ export async function listInvestments(filter: InvestmentFilter = {}) {
           ? and(...conds)
           : undefined,
     )
+    .groupBy(investments.id)
     .orderBy(asc(investments.name));
 }
 

@@ -8,6 +8,8 @@ import {
 import { apiFetch } from "@/lib/api-client";
 import type { Investment } from "@/db/schema";
 
+export type InvestmentListRow = Investment & { allocationCount: number };
+
 const KEY = ["investments"] as const;
 
 export type InvestmentInput = {
@@ -28,7 +30,7 @@ export function useInvestments() {
   return useQuery({
     queryKey: KEY,
     queryFn: () =>
-      apiFetch<{ investments: Investment[]; count: number }>(
+      apiFetch<{ investments: InvestmentListRow[]; count: number }>(
         "/api/investments",
       ),
   });

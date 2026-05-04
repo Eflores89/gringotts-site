@@ -15,8 +15,10 @@ import {
   Settings,
   LogOut,
   Menu,
+  PanelLeftOpen,
   X,
 } from "lucide-react";
+import { useSidebar } from "./sidebar-context";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -43,6 +45,7 @@ export function Header() {
   const router = useRouter();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const { collapsed, toggle } = useSidebar();
 
   async function onLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -53,6 +56,18 @@ export function Header() {
   return (
     <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b border-border bg-background/80 px-4 backdrop-blur-sm lg:px-6">
       <div className="flex items-center gap-3">
+        {/* Show-sidebar — desktop only, visible when sidebar is collapsed */}
+        {collapsed && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggle}
+            aria-label="Show sidebar"
+            className="hidden lg:inline-flex"
+          >
+            <PanelLeftOpen className="size-5" />
+          </Button>
+        )}
         {/* Hamburger — visible on mobile only */}
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
