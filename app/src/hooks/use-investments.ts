@@ -89,6 +89,75 @@ export function useDeleteInvestment() {
   });
 }
 
+type AllocType = "industry" | "geography" | "fund";
+
+export type InvestmentAllocationCreate =
+  | { existingAllocationId: string }
+  | {
+      name?: string | null;
+      allocationType: AllocType;
+      category: string;
+      percentage: number;
+    };
+
+export type InvestmentAllocationPatch = {
+  name?: string | null;
+  allocationType?: AllocType;
+  category?: string;
+  percentage?: number;
+};
+
+export function useAddInvestmentAllocation(investmentId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: InvestmentAllocationCreate) =>
+      apiFetch<{ allocation: unknown }>(
+        `/api/investments/${investmentId}/allocations`,
+        { method: "POST", body: JSON.stringify(input) },
+      ),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["allocations"] });
+      qc.invalidateQueries({ queryKey: KEY });
+    },
+  });
+}
+
+export function useUpdateInvestmentAllocation(investmentId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      allocId,
+      patch,
+    }: {
+      allocId: string;
+      patch: InvestmentAllocationPatch;
+    }) =>
+      apiFetch<{ allocation: unknown }>(
+        `/api/investments/${investmentId}/allocations/${allocId}`,
+        { method: "PATCH", body: JSON.stringify(patch) },
+      ),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["allocations"] });
+      qc.invalidateQueries({ queryKey: KEY });
+    },
+  });
+}
+
+export function useRemoveInvestmentAllocation(investmentId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (allocId: string) =>
+      apiFetch<{ unlinked: boolean }>(
+        `/api/investments/${investmentId}/allocations/${allocId}`,
+        { method: "DELETE" },
+      ),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["allocations"] });
+      qc.invalidateQueries({ queryKey: KEY });
+    },
+  });
+}
+
 export function useCopyAllocations(targetInvestmentId: string) {
   const qc = useQueryClient();
   return useMutation({

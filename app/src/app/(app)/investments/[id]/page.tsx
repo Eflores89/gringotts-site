@@ -19,7 +19,7 @@ import {
   useInvestment,
   useUpdateInvestment,
 } from "@/hooks/use-investments";
-import { InvestmentAllocationsPanel } from "@/components/allocations/InvestmentAllocationsPanel";
+import { GroupedAllocationsPanel } from "@/components/allocations/GroupedAllocationsPanel";
 
 function toPatch(values: InvestmentFormValues) {
   const empty = (s: string | undefined) => (s && s.length > 0 ? s : null);
@@ -93,7 +93,7 @@ export default function EditInvestmentPage({
         </CardContent>
       </Card>
 
-      <InvestmentAllocationsPanel
+      <GroupedAllocationsPanel
         investmentId={id}
         ticker={inv.data?.investment.ticker}
       />

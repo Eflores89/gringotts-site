@@ -217,3 +217,173 @@ export async function countAllocationLinks() {
     .from(allocationInvestments);
   return Number(row?.c ?? 0);
 }
+
+/**
+ * Add an allocation to a single investment, either by linking an existing
+ * allocation row or by creating a new one. Returns the resulting allocation.
+ */
+export async function addInvestmentAllocation(
+  investmentId: string,
+  input:
+    | { existingAllocationId: string }
+    | {
+        name?: string | null;
+        allocationType: string;
+        category: string;
+        percentage: number;
+      },
+) {
+  await requireAuth();
+  // Confirm the investment exists upfront for a clean error.
+  await assertInvestmentsExist([investmentId]);
+
+  let allocationId: string;
+  if ("existingAllocationId" in input) {
+    const [existing] = await db
+      .select({ id: allocations.id })
+      .from(allocations)
+      .where(eq(allocations.id, input.existingAllocationId));
+    if (!existing) throw new Error("Allocation not found");
+    allocationId = existing.id;
+  } else {
+    const now = Date.now();
+    allocationId = randomUUID();
+    await db.insert(allocations).values({
+      id: allocationId,
+      notionId: null,
+      name: input.name ?? null,
+      allocationType: input.allocationType,
+      category: input.category,
+      percentage: input.percentage,
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+
+  // Idempotent insert: ignore if the link already exists.
+  const [exists] = await db
+    .select({ id: allocationInvestments.allocationId })
+    .from(allocationInvestments)
+    .where(
+      and(
+        eq(allocationInvestments.allocationId, allocationId),
+        eq(allocationInvestments.investmentId, investmentId),
+      ),
+    );
+  if (!exists) {
+    await db
+      .insert(allocationInvestments)
+      .values({ allocationId, investmentId });
+  }
+
+  return getAllocationById(allocationId);
+}
+
+/**
+ * Edit an allocation as it applies to a single investment. If the underlying
+ * allocation row is shared with other investments, fork: clone the row with
+ * the patched values, link only this investment to the new row, and unlink
+ * from the old one. Otherwise update in place. Returns the resulting
+ * allocation row.
+ */
+export async function updateInvestmentAllocation(
+  investmentId: string,
+  allocationId: string,
+  patch: {
+    name?: string | null;
+    allocationType?: string;
+    category?: string;
+    percentage?: number;
+  },
+) {
+  await requireAuth();
+
+  const [link] = await db
+    .select()
+    .from(allocationInvestments)
+    .where(
+      and(
+        eq(allocationInvestments.allocationId, allocationId),
+        eq(allocationInvestments.investmentId, investmentId),
+      ),
+    );
+  if (!link) throw new Error("Allocation is not linked to this investment");
+
+  const [current] = await db
+    .select()
+    .from(allocations)
+    .where(eq(allocations.id, allocationId));
+  if (!current) throw new Error("Allocation not found");
+
+  const otherLinks = await db
+    .select({ id: allocationInvestments.investmentId })
+    .from(allocationInvestments)
+    .where(eq(allocationInvestments.allocationId, allocationId));
+  const sharedWithOthers = otherLinks.some(
+    (l) => l.id !== investmentId,
+  );
+
+  if (!sharedWithOthers) {
+    const update: Record<string, unknown> = { updatedAt: Date.now() };
+    if (patch.name !== undefined) update.name = patch.name;
+    if (patch.allocationType !== undefined)
+      update.allocationType = patch.allocationType;
+    if (patch.category !== undefined) update.category = patch.category;
+    if (patch.percentage !== undefined) update.percentage = patch.percentage;
+    await db.update(allocations).set(update).where(eq(allocations.id, allocationId));
+    return getAllocationById(allocationId);
+  }
+
+  // Fork: clone with patched values, link only this investment.
+  const now = Date.now();
+  const newId = randomUUID();
+  await db.insert(allocations).values({
+    id: newId,
+    notionId: null,
+    name: patch.name !== undefined ? patch.name : current.name,
+    allocationType:
+      patch.allocationType !== undefined
+        ? patch.allocationType
+        : current.allocationType,
+    category: patch.category !== undefined ? patch.category : current.category,
+    percentage:
+      patch.percentage !== undefined ? patch.percentage : current.percentage,
+    createdAt: now,
+    updatedAt: now,
+  });
+  await db.insert(allocationInvestments).values({
+    allocationId: newId,
+    investmentId,
+  });
+  await db
+    .delete(allocationInvestments)
+    .where(
+      and(
+        eq(allocationInvestments.allocationId, allocationId),
+        eq(allocationInvestments.investmentId, investmentId),
+      ),
+    );
+  return getAllocationById(newId);
+}
+
+/**
+ * Unlink an allocation from a single investment. Leaves the underlying
+ * allocation row alive (it may still be linked to others, or sit as an
+ * orphan to be cleaned up from /allocations).
+ */
+export async function removeInvestmentAllocation(
+  investmentId: string,
+  allocationId: string,
+) {
+  await requireAuth();
+  const result = await db
+    .delete(allocationInvestments)
+    .where(
+      and(
+        eq(allocationInvestments.allocationId, allocationId),
+        eq(allocationInvestments.investmentId, investmentId),
+      ),
+    )
+    .returning({ id: allocationInvestments.allocationId });
+  return result.length > 0;
+}
