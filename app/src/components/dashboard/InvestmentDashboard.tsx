@@ -9,8 +9,6 @@ import {
   Legend,
   Line,
   LineChart,
-  Pie,
-  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -38,19 +36,6 @@ import type {
   PortfolioSummary,
 } from "@/lib/investment-analytics";
 import { formatAmount, formatMoney } from "@/lib/format";
-
-const COLORS = [
-  "#34d399", // emerald
-  "#f59e0b", // amber
-  "#3b82f6", // blue
-  "#ef4444", // red
-  "#a855f7", // purple
-  "#ec4899", // pink
-  "#14b8a6", // teal
-  "#f97316", // orange
-  "#6366f1", // indigo
-  "#eab308", // yellow
-];
 
 const eur = (v: number) =>
   new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(v);
@@ -129,31 +114,35 @@ export function InvestmentDashboard({ data }: Props) {
       </div>
 
       {/* Row 1: Asset type + Allocation breakdowns */}
-      <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
-        <DonutCard title="By asset type" slices={data.byAssetType.map((s) => ({ name: s.name, value: s.value }))} />
-        <DonutCard
+      <div className="grid gap-4 lg:grid-cols-2">
+        <BarListCard
+          title="By asset type"
+          slices={data.byAssetType.map((s) => ({ name: s.name, value: s.value }))}
+          format="money"
+        />
+        <BarListCard
           title="Industry allocation"
           slices={data.industryAllocations.map((a) => ({
             name: a.category,
             value: a.percentage,
           }))}
-          suffix="%"
+          format="percent"
         />
-        <DonutCard
+        <BarListCard
           title="Geography allocation"
           slices={data.geographyAllocations.map((a) => ({
             name: a.category,
             value: a.percentage,
           }))}
-          suffix="%"
+          format="percent"
         />
-        <DonutCard
+        <BarListCard
           title="Fund allocation"
           slices={data.fundAllocations.map((a) => ({
             name: a.category,
             value: a.percentage,
           }))}
-          suffix="%"
+          format="percent"
         />
       </div>
 
@@ -262,63 +251,57 @@ function StatCard({
   );
 }
 
-function DonutCard({
+function BarListCard({
   title,
   slices,
-  suffix = "",
+  format,
 }: {
   title: string;
   slices: { name: string; value: number }[];
-  suffix?: string;
+  format: "money" | "percent";
 }) {
-  const total = slices.reduce((s, x) => s + x.value, 0);
-  if (slices.length === 0)
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">{title}</CardTitle>
-        </CardHeader>
-        <CardContent className="flex h-56 items-center justify-center text-sm text-muted-foreground">
-          No data
-        </CardContent>
-      </Card>
-    );
+  const sorted = [...slices]
+    .filter((s) => s.value > 0)
+    .sort((a, b) => b.value - a.value);
+  const total = sorted.reduce((s, x) => s + x.value, 0);
+  const max = sorted[0]?.value ?? 0;
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-base">{title}</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-56 w-full">
-          <ResponsiveContainer>
-            <PieChart>
-              <Pie
-                data={slices}
-                dataKey="value"
-                nameKey="name"
-                cx="50%"
-                cy="50%"
-                outerRadius={80}
-                innerRadius={45}
-                paddingAngle={2}
-              >
-                {slices.map((_, i) => (
-                  <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip
-                contentStyle={TOOLTIP_STYLE}
-                formatter={(v) => {
-                  const n = Number(v);
-                  const pct = total > 0 ? ((n / total) * 100).toFixed(1) : "0.0";
-                  if (suffix === "%") return `${n.toFixed(1)}% (of portfolio)`;
-                  return `€${eur(n)} · ${pct}%`;
-                }}
-              />
-              <Legend wrapperStyle={{ fontSize: 11, color: "#999" }} />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
+        {sorted.length === 0 ? (
+          <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">
+            No data
+          </div>
+        ) : (
+          <ul className="space-y-2">
+            {sorted.map((s) => {
+              const widthPct = max > 0 ? (s.value / max) * 100 : 0;
+              const sharePct = total > 0 ? (s.value / total) * 100 : 0;
+              return (
+                <li key={s.name} className="space-y-1">
+                  <div className="flex items-baseline justify-between gap-3 text-sm">
+                    <span className="truncate font-medium">{s.name}</span>
+                    <span className="font-mono text-xs tabular-nums text-muted-foreground">
+                      {format === "money"
+                        ? `€${eur(s.value)} · ${sharePct.toFixed(1)}%`
+                        : `${s.value.toFixed(1)}%`}
+                    </span>
+                  </div>
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="h-full rounded-full bg-emerald-500"
+                      style={{ width: `${widthPct}%` }}
+                    />
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </CardContent>
     </Card>
   );

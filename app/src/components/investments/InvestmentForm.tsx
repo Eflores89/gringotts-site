@@ -52,6 +52,7 @@ const ASSET_TYPES = [
   "crypto",
   "real-estate",
   "cash",
+  "company",
   "other",
 ] as const;
 
