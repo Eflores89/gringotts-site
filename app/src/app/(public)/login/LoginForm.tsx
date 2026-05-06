@@ -37,7 +37,7 @@ export function LoginForm() {
         setError(data.error ?? "Login failed");
         return;
       }
-      const from = search.get("from") ?? "/dashboard";
+      const from = search.get("from") ?? "/spending";
       router.push(from);
       router.refresh();
     } catch (err) {

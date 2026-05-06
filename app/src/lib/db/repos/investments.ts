@@ -1,6 +1,6 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
-import { and, asc, eq, getTableColumns, isNotNull, sql } from "drizzle-orm";
+import { and, asc, eq, getTableColumns, inArray, isNotNull, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { allocationInvestments, investments } from "@/db/schema";
 import { requireAuth } from "@/lib/auth";
@@ -130,12 +130,26 @@ export async function deleteInvestment(id: string) {
   return result.length > 0;
 }
 
-export async function listInvestmentsWithTicker() {
+// Asset types whose tickers are meaningful to look up on Yahoo Finance.
+// Anything else (cash, bonds, real-estate, crypto, etc.) is skipped even
+// if a "ticker" string is set, since Yahoo will happily return a wrong
+// match for short labels like "CASH".
+const PRICEABLE_ASSET_TYPES = ["etf", "stock", "company"] as const;
+
+export async function listPriceableInvestments() {
   await requireAuth();
   return db
     .select()
     .from(investments)
-    .where(isNotNull(investments.ticker));
+    .where(
+      and(
+        isNotNull(investments.ticker),
+        inArray(
+          sql`lower(${investments.assetType})`,
+          PRICEABLE_ASSET_TYPES as unknown as string[],
+        ),
+      ),
+    );
 }
 
 export async function setCurrentPrice(

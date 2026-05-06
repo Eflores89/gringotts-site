@@ -1,6 +1,6 @@
 import { handle } from "@/lib/api";
 import {
-  listInvestmentsWithTicker,
+  listPriceableInvestments,
   setCurrentPrice,
 } from "@/lib/db/repos/investments";
 
@@ -36,7 +36,7 @@ type Detail = {
 
 export async function POST() {
   return handle(async () => {
-    const rows = await listInvestmentsWithTicker();
+    const rows = await listPriceableInvestments();
     const today = new Date().toISOString().slice(0, 10);
 
     let updated = 0;

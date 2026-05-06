@@ -1,9 +1,9 @@
 "use client";
 
-import { ReactNode } from "react";
 import dynamic from "next/dynamic";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { PortfolioSummary } from "@/lib/investment-analytics";
+import { InvestmentsList } from "./InvestmentsList";
 
 const InvestmentDashboard = dynamic(
   () =>
@@ -13,24 +13,22 @@ const InvestmentDashboard = dynamic(
   { ssr: false, loading: () => <div className="h-96 w-full" /> },
 );
 
-export function DashboardTabs({
-  spendingContent,
+export function InvestmentsTabs({
   portfolioData,
 }: {
-  spendingContent: ReactNode;
   portfolioData: PortfolioSummary;
 }) {
   return (
-    <Tabs defaultValue="spending" className="space-y-6">
+    <Tabs defaultValue="resumen" className="space-y-6">
       <TabsList>
-        <TabsTrigger value="spending">Spending</TabsTrigger>
-        <TabsTrigger value="investments">Investments</TabsTrigger>
+        <TabsTrigger value="resumen">Resumen</TabsTrigger>
+        <TabsTrigger value="lista">Lista</TabsTrigger>
       </TabsList>
-      <TabsContent value="spending" className="space-y-6">
-        {spendingContent}
-      </TabsContent>
-      <TabsContent value="investments">
+      <TabsContent value="resumen">
         <InvestmentDashboard data={portfolioData} />
+      </TabsContent>
+      <TabsContent value="lista">
+        <InvestmentsList />
       </TabsContent>
     </Tabs>
   );

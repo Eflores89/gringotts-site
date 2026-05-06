@@ -34,6 +34,13 @@ export type AllocationSlice = {
   percentage: number;
 };
 
+export type PortfolioBreakdowns = {
+  byAssetType: { name: string; value: number }[];
+  industryAllocations: AllocationSlice[];
+  geographyAllocations: AllocationSlice[];
+  fundAllocations: AllocationSlice[];
+};
+
 export type PortfolioSummary = {
   holdings: PortfolioHolding[];
   totalValue: number;
@@ -42,11 +49,14 @@ export type PortfolioSummary = {
   totalReturnPct: number;
   liquidValue: number;
   unvestedValue: number;
+  monthlyHistory: { label: string; value: number }[];
+  // Breakdowns over all holdings (vested + unvested).
   byAssetType: { name: string; value: number }[];
   industryAllocations: AllocationSlice[];
   geographyAllocations: AllocationSlice[];
   fundAllocations: AllocationSlice[];
-  monthlyHistory: { label: string; value: number }[];
+  // Same breakdowns restricted to vested holdings.
+  vestedBreakdowns: PortfolioBreakdowns;
 };
 
 function fxRate(currency: string | null): number {
@@ -105,16 +115,6 @@ export async function getPortfolioSummary(): Promise<PortfolioSummary> {
     .reduce((s, h) => s + h.currentValue, 0);
   const unvestedValue = totalValue - liquidValue;
 
-  // By asset type
-  const assetMap = new Map<string, number>();
-  for (const h of holdings) {
-    const key = h.assetType ?? "Other";
-    assetMap.set(key, (assetMap.get(key) ?? 0) + h.currentValue);
-  }
-  const byAssetType = Array.from(assetMap.entries())
-    .map(([name, value]) => ({ name, value }))
-    .sort((a, b) => b.value - a.value);
-
   // Build allocation link map: allocationId → investmentId[]
   const allocInvMap = new Map<string, string[]>();
   for (const l of linkRows) {
@@ -123,41 +123,59 @@ export async function getPortfolioSummary(): Promise<PortfolioSummary> {
     allocInvMap.set(l.allocationId, arr);
   }
 
-  // Weighted allocation calculation
-  function calcWeighted(type: string): AllocationSlice[] {
-    if (totalValue === 0) return [];
-    const weighted = new Map<string, number>();
-    for (const h of holdings) {
-      const weight = h.currentValue / totalValue;
-      const invAllocs = allocRows.filter((a) => {
-        if ((a.allocationType ?? "").toLowerCase() !== type) return false;
-        const linked = allocInvMap.get(a.id) ?? [];
-        return linked.includes(h.id);
-      });
-      if (invAllocs.length === 0) {
-        weighted.set(
-          "Unclassified",
-          (weighted.get("Unclassified") ?? 0) + weight * 100,
-        );
-      } else {
-        for (const a of invAllocs) {
-          const cat = a.category ?? "Other";
+  function computeBreakdowns(scope: PortfolioHolding[]): PortfolioBreakdowns {
+    const scopeTotal = scope.reduce((s, h) => s + h.currentValue, 0);
+
+    const assetMap = new Map<string, number>();
+    for (const h of scope) {
+      const key = h.assetType ?? "Other";
+      assetMap.set(key, (assetMap.get(key) ?? 0) + h.currentValue);
+    }
+    const byAssetType = Array.from(assetMap.entries())
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value);
+
+    function calcWeighted(type: string): AllocationSlice[] {
+      if (scopeTotal === 0) return [];
+      const weighted = new Map<string, number>();
+      for (const h of scope) {
+        const weight = h.currentValue / scopeTotal;
+        const invAllocs = allocRows.filter((a) => {
+          if ((a.allocationType ?? "").toLowerCase() !== type) return false;
+          const linked = allocInvMap.get(a.id) ?? [];
+          return linked.includes(h.id);
+        });
+        if (invAllocs.length === 0) {
           weighted.set(
-            cat,
-            (weighted.get(cat) ?? 0) + weight * (a.percentage ?? 0),
+            "Unclassified",
+            (weighted.get("Unclassified") ?? 0) + weight * 100,
           );
+        } else {
+          for (const a of invAllocs) {
+            const cat = a.category ?? "Other";
+            weighted.set(
+              cat,
+              (weighted.get(cat) ?? 0) + weight * (a.percentage ?? 0),
+            );
+          }
         }
       }
+      return Array.from(weighted.entries())
+        .filter(([, v]) => v > 0.1)
+        .map(([category, percentage]) => ({ category, percentage }))
+        .sort((a, b) => b.percentage - a.percentage);
     }
-    return Array.from(weighted.entries())
-      .filter(([, v]) => v > 0.1)
-      .map(([category, percentage]) => ({ category, percentage }))
-      .sort((a, b) => b.percentage - a.percentage);
+
+    return {
+      byAssetType,
+      industryAllocations: calcWeighted("industry"),
+      geographyAllocations: calcWeighted("geography"),
+      fundAllocations: calcWeighted("fund"),
+    };
   }
 
-  const industryAllocations = calcWeighted("industry");
-  const geographyAllocations = calcWeighted("geography");
-  const fundAllocations = calcWeighted("fund");
+  const all = computeBreakdowns(holdings);
+  const vestedBreakdowns = computeBreakdowns(holdings.filter((h) => h.isVested));
 
   // Monthly history: approximate from purchase dates to now using cost basis
   const monthlyHistory: { label: string; value: number }[] = [];
@@ -192,10 +210,8 @@ export async function getPortfolioSummary(): Promise<PortfolioSummary> {
     totalReturnPct,
     liquidValue,
     unvestedValue,
-    byAssetType,
-    industryAllocations,
-    geographyAllocations,
-    fundAllocations,
     monthlyHistory,
+    ...all,
+    vestedBreakdowns,
   };
 }

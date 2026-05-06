@@ -88,6 +88,9 @@ export function InvestmentDashboard({ data }: Props) {
   });
   const [includeUnvested, setIncludeUnvested] = useState(true);
   const [groupTicker, setGroupTicker] = useState(false);
+  const [vestedOnlyBreakdown, setVestedOnlyBreakdown] = useState(false);
+
+  const breakdowns = vestedOnlyBreakdown ? data.vestedBreakdowns : data;
 
   const displayHoldings = useMemo(
     () => (groupTicker ? groupByTickerFn(data.holdings) : data.holdings),
@@ -114,36 +117,50 @@ export function InvestmentDashboard({ data }: Props) {
       </div>
 
       {/* Row 1: Asset type + Allocation breakdowns */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        <BarListCard
-          title="By asset type"
-          slices={data.byAssetType.map((s) => ({ name: s.name, value: s.value }))}
-          format="money"
-        />
-        <BarListCard
-          title="Industry allocation"
-          slices={data.industryAllocations.map((a) => ({
-            name: a.category,
-            value: a.percentage,
-          }))}
-          format="percent"
-        />
-        <BarListCard
-          title="Geography allocation"
-          slices={data.geographyAllocations.map((a) => ({
-            name: a.category,
-            value: a.percentage,
-          }))}
-          format="percent"
-        />
-        <BarListCard
-          title="Fund allocation"
-          slices={data.fundAllocations.map((a) => ({
-            name: a.category,
-            value: a.percentage,
-          }))}
-          format="percent"
-        />
+      <div className="space-y-3">
+        <div className="flex items-center justify-end">
+          <label className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Checkbox
+              checked={vestedOnlyBreakdown}
+              onCheckedChange={(c) => setVestedOnlyBreakdown(!!c)}
+            />
+            Vested only
+          </label>
+        </div>
+        <div className="grid gap-4 lg:grid-cols-2">
+          <BarListCard
+            title="By asset type"
+            slices={breakdowns.byAssetType.map((s) => ({
+              name: s.name,
+              value: s.value,
+            }))}
+            format="money"
+          />
+          <BarListCard
+            title="Industry allocation"
+            slices={breakdowns.industryAllocations.map((a) => ({
+              name: a.category,
+              value: a.percentage,
+            }))}
+            format="percent"
+          />
+          <BarListCard
+            title="Geography allocation"
+            slices={breakdowns.geographyAllocations.map((a) => ({
+              name: a.category,
+              value: a.percentage,
+            }))}
+            format="percent"
+          />
+          <BarListCard
+            title="Fund allocation"
+            slices={breakdowns.fundAllocations.map((a) => ({
+              name: a.category,
+              value: a.percentage,
+            }))}
+            format="percent"
+          />
+        </div>
       </div>
 
       {/* Row 2: Gain/loss bar */}

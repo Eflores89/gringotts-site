@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  LayoutDashboard,
   Receipt,
   Upload,
   Target,
@@ -30,7 +29,6 @@ import {
 import { cn } from "@/lib/utils";
 
 const NAV = [
-  { href: "/dashboard", label: "Dashboard", Icon: LayoutDashboard },
   { href: "/spending", label: "Spending", Icon: Receipt },
   { href: "/spending/import", label: "Import", Icon: Upload },
   { href: "/budget", label: "Budget", Icon: Target },
@@ -84,9 +82,7 @@ export function Header() {
             </SheetHeader>
             <nav className="flex flex-col gap-0.5 p-3">
               {NAV.map(({ href, label, Icon }) => {
-                const active =
-                  pathname === href ||
-                  (href !== "/dashboard" && pathname.startsWith(href));
+                const active = pathname === href || pathname.startsWith(href);
                 return (
                   <Link
                     key={href}

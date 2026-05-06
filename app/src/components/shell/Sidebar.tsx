@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard,
   Receipt,
   Upload,
   Target,
@@ -26,7 +25,6 @@ type NavItem = {
 };
 
 const NAV: NavItem[] = [
-  { href: "/dashboard", label: "Dashboard", Icon: LayoutDashboard },
   { href: "/spending", label: "Spending", Icon: Receipt },
   { href: "/spending/import", label: "Import", Icon: Upload },
   { href: "/budget", label: "Budget", Icon: Target },
@@ -46,7 +44,7 @@ export function Sidebar() {
   return (
     <aside className="sticky top-0 hidden h-screen w-56 shrink-0 border-r border-sidebar-border bg-sidebar text-sidebar-foreground lg:block">
       <div className="flex h-14 items-center justify-between border-b border-sidebar-border px-3 pl-5">
-        <Link href="/dashboard" className="text-base font-semibold tracking-tight">
+        <Link href="/spending" className="text-base font-semibold tracking-tight">
           Gringotts
         </Link>
         <Button
@@ -61,9 +59,7 @@ export function Sidebar() {
       </div>
       <nav className="flex flex-col gap-0.5 p-3">
         {NAV.map(({ href, label, Icon }) => {
-          const active =
-            pathname === href ||
-            (href !== "/dashboard" && pathname.startsWith(href));
+          const active = pathname === href || pathname.startsWith(href);
           return (
             <Link
               key={href}
