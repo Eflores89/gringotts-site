@@ -173,6 +173,26 @@ export async function sumSpendingByMonth(year: number) {
     .orderBy(spending.mm);
 }
 
+/**
+ * Cash-flow rollup: sum euro_money grouped by the month of the *due* date.
+ * Falls back to charge_date when money_date is null. The effective date is
+ * what hits cash flow in real life — settlement day, not transaction day.
+ */
+export async function sumSpendingByDueMonth(year: number) {
+  await requireAuth();
+  const effective = sql<string>`COALESCE(${spending.moneyDate}, ${spending.chargeDate})`;
+  return db
+    .select({
+      mm: sql<number>`CAST(strftime('%m', ${effective}) AS INTEGER)`,
+      total: sql<number>`COALESCE(SUM(${spending.euroMoney}), 0)`,
+      count: sql<number>`COUNT(*)`,
+    })
+    .from(spending)
+    .where(sql`${effective} LIKE ${`${year}-%`}`)
+    .groupBy(sql`CAST(strftime('%m', ${effective}) AS INTEGER)`)
+    .orderBy(sql`CAST(strftime('%m', ${effective}) AS INTEGER)`);
+}
+
 export async function sumSpendingByCategory(year: number, month?: number) {
   await requireAuth();
   const conds = [like(spending.chargeDate, `${year}-%`)];

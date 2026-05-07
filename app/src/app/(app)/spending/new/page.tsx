@@ -15,6 +15,7 @@ import {
 } from "@/components/spending/SpendingForm";
 import { PageHeader } from "@/components/common/PageHeader";
 import { useCategories } from "@/hooks/use-categories";
+import { usePaymentMethods } from "@/hooks/use-payment-methods";
 import { useCreateSpending } from "@/hooks/use-spending";
 
 function toInput(values: SpendingFormValues) {
@@ -36,6 +37,7 @@ function toInput(values: SpendingFormValues) {
 export default function NewSpendingPage() {
   const router = useRouter();
   const cats = useCategories();
+  const pm = usePaymentMethods();
   const create = useCreateSpending();
 
   async function onSubmit(values: SpendingFormValues) {
@@ -66,6 +68,7 @@ export default function NewSpendingPage() {
           ) : (
             <SpendingForm
               categories={cats.data?.categories ?? []}
+              methods={pm.data?.methods ?? []}
               submitLabel="Create"
               submitting={create.isPending}
               onSubmit={onSubmit}

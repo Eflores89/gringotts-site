@@ -15,9 +15,11 @@ import {
   DashboardTrendChart,
 } from "@/components/dashboard/DashboardCharts";
 import { BudgetVsSpending } from "@/components/dashboard/BudgetVsSpending";
+import { CashFlowReport } from "@/components/dashboard/CashFlowReport";
 import { listCategories } from "@/lib/db/repos/categories";
 import {
   sumSpendingByCategory,
+  sumSpendingByDueMonth,
   sumSpendingByMonth,
 } from "@/lib/db/repos/spending";
 import { sumBudgetByMonth } from "@/lib/db/repos/budget";
@@ -28,12 +30,14 @@ export const dynamic = "force-dynamic";
 
 export default async function SpendingPage() {
   const year = new Date().getFullYear();
-  const [spendByMonth, budgetByMonth, spendByCat, cats] = await Promise.all([
-    sumSpendingByMonth(year),
-    sumBudgetByMonth(year),
-    sumSpendingByCategory(year),
-    listCategories(),
-  ]);
+  const [spendByMonth, budgetByMonth, spendByCat, spendByDue, cats] =
+    await Promise.all([
+      sumSpendingByMonth(year),
+      sumBudgetByMonth(year),
+      sumSpendingByCategory(year),
+      sumSpendingByDueMonth(year),
+      listCategories(),
+    ]);
 
   const monthMap = new Map<number, MonthPoint>();
   for (let i = 1; i <= 12; i++) {
@@ -128,7 +132,18 @@ export default async function SpendingPage() {
           </Button>
         }
       />
-      <SpendingTabs resumenContent={resumen} />
+      <SpendingTabs
+        resumenContent={resumen}
+        cashFlowContent={
+          <CashFlowReport
+            year={year}
+            rows={spendByDue.map((r) => ({
+              mm: r.mm,
+              total: Number(r.total ?? 0),
+            }))}
+          />
+        }
+      />
     </div>
   );
 }

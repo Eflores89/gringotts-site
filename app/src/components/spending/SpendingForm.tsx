@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { Category, Spending } from "@/db/schema";
+import type { Category, PaymentMethod, Spending } from "@/db/schema";
 import { CURRENCIES, FX_TO_EUR } from "@/lib/fx";
 import { formatAmount } from "@/lib/format";
 import { numericOnChange } from "@/lib/utils";
@@ -54,11 +54,10 @@ function deriveFxRate(initial?: Partial<Spending>): number {
   return FX_TO_EUR[(initial?.currency ?? "EUR").toUpperCase()] ?? 1;
 }
 
-const METHODS = ["cash", "card", "transfer"] as const;
-
 export function SpendingForm({
   initial,
   categories,
+  methods,
   submitLabel,
   submitting,
   onSubmit,
@@ -66,6 +65,7 @@ export function SpendingForm({
 }: {
   initial?: Partial<Spending>;
   categories: Category[];
+  methods: PaymentMethod[];
   submitLabel: string;
   submitting?: boolean;
   onSubmit: (values: SpendingFormValues) => void;
@@ -235,7 +235,7 @@ export function SpendingForm({
             name="chargeDate"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Charge date</FormLabel>
+                <FormLabel>Spend date</FormLabel>
                 <FormControl>
                   <Input type="date" {...field} />
                 </FormControl>
@@ -248,7 +248,7 @@ export function SpendingForm({
             name="moneyDate"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Money date</FormLabel>
+                <FormLabel>Due date</FormLabel>
                 <FormControl>
                   <Input type="date" {...field} />
                 </FormControl>
@@ -261,26 +261,42 @@ export function SpendingForm({
           <FormField
             control={form.control}
             name="method"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Method</FormLabel>
-                <Select value={field.value || ""} onValueChange={field.onChange}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="—" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {METHODS.map((m) => (
-                      <SelectItem key={m} value={m}>
-                        {m}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
+            render={({ field }) => {
+              const names = methods.map((m) => m.name);
+              const current = field.value || "";
+              // If the row has a legacy method that's no longer configured,
+              // keep it visible so saving doesn't silently drop it.
+              const options =
+                current && !names.includes(current)
+                  ? [...names, current]
+                  : names;
+              return (
+                <FormItem>
+                  <FormLabel>Method</FormLabel>
+                  <Select value={current} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue
+                          placeholder={
+                            methods.length === 0
+                              ? "Add methods in Auxiliary"
+                              : "—"
+                          }
+                        />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {options.map((m) => (
+                        <SelectItem key={m} value={m}>
+                          {m}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              );
+            }}
           />
           <FormField
             control={form.control}

@@ -17,6 +17,7 @@ import {
 } from "@/components/spending/SpendingForm";
 import { PageHeader } from "@/components/common/PageHeader";
 import { useCategories } from "@/hooks/use-categories";
+import { usePaymentMethods } from "@/hooks/use-payment-methods";
 import {
   useSpendingEntry,
   useUpdateSpending,
@@ -46,6 +47,7 @@ export default function EditSpendingPage({
   const { id } = use(params);
   const router = useRouter();
   const cats = useCategories();
+  const pm = usePaymentMethods();
   const entry = useSpendingEntry(id);
   const update = useUpdateSpending();
 
@@ -84,6 +86,7 @@ export default function EditSpendingPage({
             <SpendingForm
               initial={entry.data.spending}
               categories={cats.data?.categories ?? []}
+              methods={pm.data?.methods ?? []}
               submitLabel="Save"
               submitting={update.isPending}
               onSubmit={onSubmit}
