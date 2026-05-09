@@ -18,10 +18,15 @@ export const categories = sqliteTable(
     spendGrp: text("spend_grp"),
     spendLifegrp: text("spend_lifegrp"),
     status: text("status"),
+    // 'spend' (default) or 'income' — segregates pickers across forms.
+    kind: text("kind").notNull().default("spend"),
     createdAt: integer("created_at").notNull(),
     updatedAt: integer("updated_at").notNull(),
   },
-  (t) => [index("categories_spend_id_idx").on(t.spendId)],
+  (t) => [
+    index("categories_spend_id_idx").on(t.spendId),
+    index("categories_kind_idx").on(t.kind),
+  ],
 );
 
 export const spending = sqliteTable(
@@ -192,12 +197,18 @@ export const income = sqliteTable(
     euroMoney: real("euro_money"),
     source: text("source"),
     notes: text("notes"),
+    // 'planned' (default) — budgeted income; 'actual' — once we start
+    // logging real receipts.
+    kind: text("kind").notNull().default("planned"),
+    categoryId: text("category_id").references(() => categories.id),
     createdAt: integer("created_at").notNull(),
     updatedAt: integer("updated_at").notNull(),
   },
   (t) => [
     index("income_charge_date_idx").on(t.chargeDate),
     index("income_mm_idx").on(t.mm),
+    index("income_kind_idx").on(t.kind),
+    index("income_category_idx").on(t.categoryId),
   ],
 );
 

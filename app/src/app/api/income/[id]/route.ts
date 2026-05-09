@@ -10,6 +10,8 @@ const patchSchema = z.object({
   chargeDate: isoDate.optional(),
   source: z.string().max(100).nullable().optional(),
   notes: z.string().max(2000).nullable().optional(),
+  categoryId: z.string().uuid().nullable().optional(),
+  kind: z.enum(["planned", "actual"]).optional(),
   fxRate: z.number().positive().nullable().optional(),
 });
 

@@ -15,6 +15,13 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { Category } from "@/db/schema";
 
 export const categoryFormSchema = z.object({
@@ -24,6 +31,7 @@ export const categoryFormSchema = z.object({
   spendGrp: z.string().max(100).optional().or(z.literal("")),
   spendLifegrp: z.string().max(100).optional().or(z.literal("")),
   status: z.string().max(32).optional().or(z.literal("")),
+  kind: z.enum(["spend", "income"]),
 });
 export type CategoryFormValues = z.infer<typeof categoryFormSchema>;
 
@@ -49,6 +57,7 @@ export function CategoryForm({
       spendGrp: initial?.spendGrp ?? "",
       spendLifegrp: initial?.spendLifegrp ?? "",
       status: initial?.status ?? "Latest",
+      kind: (initial?.kind as "spend" | "income" | undefined) ?? "spend",
     },
   });
 
@@ -61,6 +70,7 @@ export function CategoryForm({
         spendGrp: initial.spendGrp ?? "",
         spendLifegrp: initial.spendLifegrp ?? "",
         status: initial.status ?? "Latest",
+        kind: (initial.kind as "spend" | "income" | undefined) ?? "spend",
       });
     }
   }, [initial, form]);
@@ -68,19 +78,42 @@ export function CategoryForm({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Name</FormLabel>
-              <FormControl>
-                <Input {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="grid gap-4 sm:grid-cols-2">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Name</FormLabel>
+                <FormControl>
+                  <Input {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="kind"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Kind</FormLabel>
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="spend">Spend</SelectItem>
+                    <SelectItem value="income">Income</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
         <FormField
           control={form.control}
           name="spendName"

@@ -14,6 +14,7 @@ const patchSchema = z.object({
   spendGrp: z.string().max(100).nullable().optional(),
   spendLifegrp: z.string().max(100).nullable().optional(),
   status: z.string().max(32).nullable().optional(),
+  kind: z.enum(["spend", "income"]).optional(),
 });
 
 type Ctx = { params: Promise<{ id: string }> };

@@ -22,6 +22,13 @@
       "when": 1776003493713,
       "tag": "0002_add_auxiliary_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1778154710542,
+      "tag": "0003_budget_income",
+      "breakpoints": true
     }
   ]
 }

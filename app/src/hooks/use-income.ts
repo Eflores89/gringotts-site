@@ -5,6 +5,8 @@ import type { Income } from "@/db/schema";
 
 const KEY = ["income"] as const;
 
+export type IncomeKind = "planned" | "actual";
+
 export type IncomeInput = {
   description?: string | null;
   amount: number;
@@ -12,13 +14,20 @@ export type IncomeInput = {
   chargeDate: string;
   source?: string | null;
   notes?: string | null;
+  categoryId?: string | null;
+  kind?: IncomeKind;
   fxRate?: number | null;
 };
 
-export function useIncome(filter?: { year?: number; month?: number }) {
+export function useIncome(filter?: {
+  year?: number;
+  month?: number;
+  kind?: IncomeKind;
+}) {
   const p = new URLSearchParams();
   if (filter?.year) p.set("year", String(filter.year));
   if (filter?.month) p.set("month", String(filter.month));
+  if (filter?.kind) p.set("kind", filter.kind);
   const qs = p.toString();
   return useQuery({
     queryKey: [...KEY, filter],

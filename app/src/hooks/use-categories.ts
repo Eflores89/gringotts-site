@@ -10,6 +10,8 @@ import type { Category } from "@/db/schema";
 
 const KEY = ["categories"] as const;
 
+export type CategoryKind = "spend" | "income";
+
 export type CategoryInput = {
   name: string;
   spendName?: string | null;
@@ -17,13 +19,18 @@ export type CategoryInput = {
   spendGrp?: string | null;
   spendLifegrp?: string | null;
   status?: string | null;
+  kind?: CategoryKind;
 };
 
-export function useCategories() {
+export function useCategories(filter?: { kind?: CategoryKind }) {
   return useQuery({
-    queryKey: KEY,
-    queryFn: () =>
-      apiFetch<{ categories: Category[]; count: number }>("/api/categories"),
+    queryKey: [...KEY, filter],
+    queryFn: () => {
+      const qs = filter?.kind ? `?kind=${filter.kind}` : "";
+      return apiFetch<{ categories: Category[]; count: number }>(
+        `/api/categories${qs}`,
+      );
+    },
   });
 }
 

@@ -12,11 +12,13 @@ import {
   Sparkles,
   Settings,
   PanelLeftClose,
+  Waves,
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "./sidebar-context";
+import { ThemeToggle } from "./ThemeToggle";
 
 type NavItem = {
   href: string;
@@ -28,6 +30,7 @@ const NAV: NavItem[] = [
   { href: "/spending", label: "Spending", Icon: Receipt },
   { href: "/spending/import", label: "Import", Icon: Upload },
   { href: "/budget", label: "Budget", Icon: Target },
+  { href: "/cashflow", label: "Cash flow", Icon: Waves },
   { href: "/investments", label: "Investments", Icon: TrendingUp },
   { href: "/allocations", label: "Allocations", Icon: PieChart },
   { href: "/categories", label: "Categories", Icon: Tags },
@@ -47,15 +50,18 @@ export function Sidebar() {
         <Link href="/spending" className="text-base font-semibold tracking-tight">
           Gringotts
         </Link>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={toggle}
-          aria-label="Hide sidebar"
-          className="size-7 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-        >
-          <PanelLeftClose className="size-4" />
-        </Button>
+        <div className="flex items-center gap-1">
+          <ThemeToggle />
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggle}
+            aria-label="Hide sidebar"
+            className="size-7 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          >
+            <PanelLeftClose className="size-4" />
+          </Button>
+        </div>
       </div>
       <nav className="flex flex-col gap-0.5 p-3">
         {NAV.map(({ href, label, Icon }) => {

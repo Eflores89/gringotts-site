@@ -1,6 +1,5 @@
 "use client";
 
-import { use } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -11,71 +10,62 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  BudgetForm,
-  type BudgetFormValues,
-} from "@/components/budget/BudgetForm";
+  IncomeForm,
+  type IncomeFormValues,
+} from "@/components/income/IncomeForm";
 import { PageHeader } from "@/components/common/PageHeader";
 import { useCategories } from "@/hooks/use-categories";
-import { useBudgetEntry, useUpdateBudget } from "@/hooks/use-budget";
+import { useCreateIncome } from "@/hooks/use-income";
 
-function toPatch(values: BudgetFormValues) {
+function toInput(values: IncomeFormValues) {
   const empty = (s: string | undefined) => (s && s.length > 0 ? s : null);
   return {
-    transaction: empty(values.transaction),
+    description: empty(values.description),
     amount: Number(values.amount),
     currency: values.currency,
-    categoryId: values.categoryId,
     chargeDate: values.chargeDate,
-    status: empty(values.status),
+    source: empty(values.source),
+    notes: empty(values.notes),
+    categoryId: empty(values.categoryId),
+    kind: "planned" as const,
   };
 }
 
-export default function EditBudgetPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = use(params);
+export default function NewBudgetIncomePage() {
   const router = useRouter();
-  const cats = useCategories({ kind: "spend" });
-  const entry = useBudgetEntry(id);
-  const update = useUpdateBudget();
+  const cats = useCategories({ kind: "income" });
+  const create = useCreateIncome();
 
-  async function onSubmit(values: BudgetFormValues) {
+  async function onSubmit(values: IncomeFormValues) {
     try {
-      await update.mutateAsync({ id, patch: toPatch(values) });
-      toast.success("Saved");
+      await create.mutateAsync(toInput(values));
+      toast.success("Planned income created");
       router.push("/budget");
       router.refresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Update failed");
+      toast.error(err instanceof Error ? err.message : "Create failed");
     }
   }
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Edit budget entry" />
+      <PageHeader title="New planned income" />
       <Card className="max-w-2xl">
         <CardHeader>
           <CardTitle className="text-base">Details</CardTitle>
         </CardHeader>
         <CardContent>
-          {entry.isLoading || cats.isLoading ? (
+          {cats.isLoading ? (
             <div className="space-y-3">
               <Skeleton className="h-10 w-full" />
               <Skeleton className="h-10 w-full" />
               <Skeleton className="h-10 w-2/3" />
             </div>
-          ) : entry.isError || !entry.data ? (
-            <p className="text-sm text-destructive">
-              {entry.error instanceof Error ? entry.error.message : "Not found"}
-            </p>
           ) : (
-            <BudgetForm
-              initial={entry.data.budget}
+            <IncomeForm
               categories={cats.data?.categories ?? []}
-              submitLabel="Save"
-              submitting={update.isPending}
+              submitLabel="Create"
+              submitting={create.isPending}
               onSubmit={onSubmit}
               onCancel={() => router.push("/budget")}
             />

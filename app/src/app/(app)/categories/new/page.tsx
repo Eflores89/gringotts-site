@@ -24,6 +24,7 @@ function toInput(values: CategoryFormValues) {
     spendGrp: empty(values.spendGrp),
     spendLifegrp: empty(values.spendLifegrp),
     status: empty(values.status),
+    kind: values.kind,
   };
 }
 

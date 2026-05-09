@@ -20,6 +20,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
@@ -112,6 +113,7 @@ export default function CategoriesPage() {
               <TableRow>
                 <SortableHead label="Spend ID" sortKey="spendId" sort={sort} onClick={toggle} className="w-[120px]" />
                 <SortableHead label="Name" sortKey="name" sort={sort} onClick={toggle} />
+                <TableHead className="w-[100px]">Kind</TableHead>
                 <SortableHead label="Spend name" sortKey="spendName" sort={sort} onClick={toggle} />
                 <SortableHead label="Group" sortKey="group" sort={sort} onClick={toggle} />
                 <SortableHead label="Lifecycle" sortKey="lifecycle" sort={sort} onClick={toggle} />
@@ -126,6 +128,13 @@ export default function CategoriesPage() {
                     {c.spendId ?? "—"}
                   </TableCell>
                   <TableCell className="font-medium">{c.name}</TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={c.kind === "income" ? "secondary" : "outline"}
+                    >
+                      {c.kind ?? "spend"}
+                    </Badge>
+                  </TableCell>
                   <TableCell className="text-muted-foreground">
                     {c.spendName ?? "—"}
                   </TableCell>

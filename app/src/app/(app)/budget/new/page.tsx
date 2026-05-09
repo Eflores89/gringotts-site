@@ -31,7 +31,7 @@ function toInput(values: BudgetFormValues) {
 
 export default function NewBudgetPage() {
   const router = useRouter();
-  const cats = useCategories();
+  const cats = useCategories({ kind: "spend" });
   const create = useCreateBudget();
 
   async function onSubmit(values: BudgetFormValues) {

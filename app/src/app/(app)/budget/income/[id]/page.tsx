@@ -10,52 +10,43 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ReimbursementsPanel } from "@/components/spending/ReimbursementsPanel";
 import {
-  SpendingForm,
-  type SpendingFormValues,
-} from "@/components/spending/SpendingForm";
+  IncomeForm,
+  type IncomeFormValues,
+} from "@/components/income/IncomeForm";
 import { PageHeader } from "@/components/common/PageHeader";
 import { useCategories } from "@/hooks/use-categories";
-import { usePaymentMethods } from "@/hooks/use-payment-methods";
-import {
-  useSpendingEntry,
-  useUpdateSpending,
-} from "@/hooks/use-spending";
+import { useIncomeEntry, useUpdateIncome } from "@/hooks/use-income";
 
-function toPatch(values: SpendingFormValues) {
+function toPatch(values: IncomeFormValues) {
   const empty = (s: string | undefined) => (s && s.length > 0 ? s : null);
   return {
-    transaction: empty(values.transaction),
+    description: empty(values.description),
     amount: Number(values.amount),
     currency: values.currency,
-    categoryId: values.categoryId,
     chargeDate: values.chargeDate,
-    moneyDate: empty(values.moneyDate),
-    method: empty(values.method),
-    spendName: empty(values.spendName),
-    status: empty(values.status),
-    fxRate: Number(values.fxRate) || null,
+    source: empty(values.source),
+    notes: empty(values.notes),
+    categoryId: empty(values.categoryId),
   };
 }
 
-export default function EditSpendingPage({
+export default function EditBudgetIncomePage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
   const router = useRouter();
-  const cats = useCategories({ kind: "spend" });
-  const pm = usePaymentMethods();
-  const entry = useSpendingEntry(id);
-  const update = useUpdateSpending();
+  const cats = useCategories({ kind: "income" });
+  const entry = useIncomeEntry(id);
+  const update = useUpdateIncome();
 
-  async function onSubmit(values: SpendingFormValues) {
+  async function onSubmit(values: IncomeFormValues) {
     try {
       await update.mutateAsync({ id, patch: toPatch(values) });
       toast.success("Saved");
-      router.push("/spending");
+      router.push("/budget");
       router.refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Update failed");
@@ -64,7 +55,7 @@ export default function EditSpendingPage({
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Edit spending entry" />
+      <PageHeader title="Edit planned income" />
       <Card className="max-w-2xl">
         <CardHeader>
           <CardTitle className="text-base">Details</CardTitle>
@@ -78,27 +69,20 @@ export default function EditSpendingPage({
             </div>
           ) : entry.isError || !entry.data ? (
             <p className="text-sm text-destructive">
-              {entry.error instanceof Error
-                ? entry.error.message
-                : "Not found"}
+              {entry.error instanceof Error ? entry.error.message : "Not found"}
             </p>
           ) : (
-            <SpendingForm
-              initial={entry.data.spending}
+            <IncomeForm
+              initial={entry.data.income}
               categories={cats.data?.categories ?? []}
-              methods={pm.data?.methods ?? []}
               submitLabel="Save"
               submitting={update.isPending}
               onSubmit={onSubmit}
-              onCancel={() => router.push("/spending")}
+              onCancel={() => router.push("/budget")}
             />
           )}
         </CardContent>
       </Card>
-
-      {entry.data?.spending && (
-        <ReimbursementsPanel spending={entry.data.spending} />
-      )}
     </div>
   );
 }

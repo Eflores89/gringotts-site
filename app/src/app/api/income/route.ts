@@ -11,6 +11,8 @@ const createSchema = z.object({
   chargeDate: isoDate,
   source: z.string().max(100).nullable().optional(),
   notes: z.string().max(2000).nullable().optional(),
+  categoryId: z.string().uuid().nullable().optional(),
+  kind: z.enum(["planned", "actual"]).optional(),
   fxRate: z.number().positive().nullable().optional(),
 });
 
@@ -19,9 +21,13 @@ export async function GET(request: Request) {
     const url = new URL(request.url);
     const year = url.searchParams.get("year");
     const month = url.searchParams.get("month");
+    const kindParam = url.searchParams.get("kind");
+    const kind =
+      kindParam === "planned" || kindParam === "actual" ? kindParam : undefined;
     const rows = await listIncome({
       year: year ? Number(year) : undefined,
       month: month ? Number(month) : undefined,
+      kind,
     });
     return { income: rows, count: rows.length };
   });

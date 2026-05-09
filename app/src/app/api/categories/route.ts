@@ -9,13 +9,17 @@ const createSchema = z.object({
   spendGrp: z.string().max(100).optional().nullable(),
   spendLifegrp: z.string().max(100).optional().nullable(),
   status: z.string().max(32).optional().nullable(),
+  kind: z.enum(["spend", "income"]).optional(),
 });
 
 export async function GET(request: Request) {
   return handle(async () => {
     const url = new URL(request.url);
     const status = url.searchParams.get("status") ?? undefined;
-    const rows = await listCategoriesPublic({ status });
+    const kindParam = url.searchParams.get("kind");
+    const kind =
+      kindParam === "spend" || kindParam === "income" ? kindParam : undefined;
+    const rows = await listCategoriesPublic({ status, kind });
     return { categories: rows, count: rows.length };
   });
 }

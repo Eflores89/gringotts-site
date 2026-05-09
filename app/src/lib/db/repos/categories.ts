@@ -1,9 +1,11 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
-import { asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { categories, spending, budget, merchantRules, spendeeRules } from "@/db/schema";
 import { requireAuth } from "@/lib/auth";
+
+export type CategoryKind = "spend" | "income";
 
 export type CategoryInput = {
   name: string;
@@ -12,20 +14,29 @@ export type CategoryInput = {
   spendGrp?: string | null;
   spendLifegrp?: string | null;
   status?: string | null;
+  kind?: CategoryKind;
 };
 
-export async function listCategories(opts?: { status?: string }) {
+export async function listCategories(opts?: {
+  status?: string;
+  kind?: CategoryKind;
+}) {
   await requireAuth();
   return listCategoriesPublic(opts);
 }
 
 /** No auth — used by /quick-spend to populate the category dropdown. */
-export async function listCategoriesPublic(opts?: { status?: string }) {
-  const where = opts?.status ? eq(categories.status, opts.status) : undefined;
+export async function listCategoriesPublic(opts?: {
+  status?: string;
+  kind?: CategoryKind;
+}) {
+  const conds = [] as Array<ReturnType<typeof eq>>;
+  if (opts?.status) conds.push(eq(categories.status, opts.status));
+  if (opts?.kind) conds.push(eq(categories.kind, opts.kind));
   return db
     .select()
     .from(categories)
-    .where(where)
+    .where(conds.length ? and(...conds) : undefined)
     .orderBy(asc(categories.spendName), asc(categories.name));
 }
 
@@ -47,6 +58,7 @@ export async function createCategory(input: CategoryInput) {
     spendGrp: input.spendGrp ?? null,
     spendLifegrp: input.spendLifegrp ?? null,
     status: input.status ?? "Latest",
+    kind: input.kind ?? "spend",
     createdAt: now,
     updatedAt: now,
   };
@@ -63,6 +75,7 @@ export async function updateCategory(id: string, patch: Partial<CategoryInput>) 
   if (patch.spendGrp !== undefined) update.spendGrp = patch.spendGrp;
   if (patch.spendLifegrp !== undefined) update.spendLifegrp = patch.spendLifegrp;
   if (patch.status !== undefined) update.status = patch.status;
+  if (patch.kind !== undefined) update.kind = patch.kind;
   await db.update(categories).set(update).where(eq(categories.id, id));
   return getCategoryById(id);
 }

@@ -36,7 +36,7 @@ function toInput(values: SpendingFormValues) {
 
 export default function NewSpendingPage() {
   const router = useRouter();
-  const cats = useCategories();
+  const cats = useCategories({ kind: "spend" });
   const pm = usePaymentMethods();
   const create = useCreateSpending();
 

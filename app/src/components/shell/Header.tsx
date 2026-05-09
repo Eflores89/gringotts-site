@@ -18,6 +18,7 @@ import {
   X,
 } from "lucide-react";
 import { useSidebar } from "./sidebar-context";
+import { ThemeToggle } from "./ThemeToggle";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -75,10 +76,11 @@ export function Header() {
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="w-64 p-0">
-            <SheetHeader className="border-b border-border px-5 py-4">
+            <SheetHeader className="flex-row items-center justify-between border-b border-border px-5 py-4">
               <SheetTitle className="text-base font-semibold tracking-tight">
                 Gringotts
               </SheetTitle>
+              <ThemeToggle />
             </SheetHeader>
             <nav className="flex flex-col gap-0.5 p-3">
               {NAV.map(({ href, label, Icon }) => {
