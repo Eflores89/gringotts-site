@@ -7,6 +7,8 @@ import { requireAuth } from "@/lib/auth";
 export type BudgetVsSpendRow = {
   categoryId: string;
   categoryName: string;
+  spendGrp: string | null;
+  spendLifegrp: string | null;
   budgetEur: number;
   spendingEur: number;
   diff: number;
@@ -57,23 +59,31 @@ export async function getBudgetVsSpending(
       .where(and(...budgetConds))
       .groupBy(budget.categoryId),
     db
-      .select({ id: categories.id, name: categories.name })
+      .select({
+        id: categories.id,
+        name: categories.name,
+        spendGrp: categories.spendGrp,
+        spendLifegrp: categories.spendLifegrp,
+      })
       .from(categories)
       .orderBy(asc(categories.name)),
   ]);
 
-  const catName = new Map(cats.map((c) => [c.id, c.name]));
+  const catInfo = new Map(cats.map((c) => [c.id, c]));
   const spendMap = new Map(spendByCat.map((r) => [r.categoryId, Number(r.total)]));
   const budgetMap = new Map(budgetByCat.map((r) => [r.categoryId, Number(r.total)]));
 
   const allCatIds = new Set([...spendMap.keys(), ...budgetMap.keys()]);
   const rows: BudgetVsSpendRow[] = [];
   for (const cid of allCatIds) {
+    const info = catInfo.get(cid);
     const b = budgetMap.get(cid) ?? 0;
     const s = spendMap.get(cid) ?? 0;
     rows.push({
       categoryId: cid,
-      categoryName: catName.get(cid) ?? "Unknown",
+      categoryName: info?.name ?? "Unknown",
+      spendGrp: info?.spendGrp ?? null,
+      spendLifegrp: info?.spendLifegrp ?? null,
       budgetEur: b,
       spendingEur: s,
       diff: b - s,
