@@ -8,6 +8,8 @@ import {
 import { apiFetch } from "@/lib/api-client";
 import type { Spending } from "@/db/schema";
 
+export type SpendingListRow = Spending & { reimbursedEur: number };
+
 const KEY = ["spending"] as const;
 
 export type SpendingInput = {
@@ -41,7 +43,9 @@ export function useSpending(filter: SpendingFilter = {}) {
   return useQuery({
     queryKey: [...KEY, filter],
     queryFn: () =>
-      apiFetch<{ spending: Spending[]; count: number }>(`/api/spending${query(filter)}`),
+      apiFetch<{ spending: SpendingListRow[]; count: number }>(
+        `/api/spending${query(filter)}`,
+      ),
   });
 }
 

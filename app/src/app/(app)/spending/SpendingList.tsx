@@ -220,7 +220,18 @@ export function SpendingList() {
                     {formatMoney(s.amount, s.currency)}
                   </TableCell>
                   <TableCell className="text-right font-mono">
-                    {formatMoney(s.euroMoney, "EUR")}
+                    {formatMoney(
+                      (s.euroMoney ?? 0) - (s.reimbursedEur ?? 0),
+                      "EUR",
+                    )}
+                    {s.reimbursedEur > 0 && (
+                      <span
+                        className="ml-1 text-[10px] text-muted-foreground"
+                        title={`Gross ${formatMoney(s.euroMoney, "EUR")} − reimbursed ${formatMoney(s.reimbursedEur, "EUR")}`}
+                      >
+                        ↩
+                      </span>
+                    )}
                   </TableCell>
                   <TableCell>
                     {s.method ? <Badge variant="outline">{s.method}</Badge> : "—"}

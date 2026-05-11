@@ -1,6 +1,6 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
-import { and, asc, desc, eq, like, sql } from "drizzle-orm";
+import { and, asc, desc, eq, getTableColumns, like, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { spending, spendingReimbursements } from "@/db/schema";
 import { requireAuth } from "@/lib/auth";
@@ -39,7 +39,10 @@ export async function listSpending(filter: SpendingFilter = {}) {
     conds.push(like(spending.chargeDate, `${filter.year}-%`));
   }
   return db
-    .select()
+    .select({
+      ...getTableColumns(spending),
+      reimbursedEur: sql<number>`COALESCE((SELECT SUM(${spendingReimbursements.euroMoney}) FROM ${spendingReimbursements} WHERE ${spendingReimbursements.spendingId} = ${spending.id}), 0)`,
+    })
     .from(spending)
     .where(conds.length ? and(...conds) : undefined)
     .orderBy(desc(spending.chargeDate), desc(spending.createdAt));
