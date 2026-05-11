@@ -2,9 +2,14 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 import { and, asc, desc, eq, like, sql } from "drizzle-orm";
 import { db } from "@/db/client";
-import { spending } from "@/db/schema";
+import { spending, spendingReimbursements } from "@/db/schema";
 import { requireAuth } from "@/lib/auth";
 import { mmFromIsoDate, toEuro } from "@/lib/fx";
+
+// Net-of-reimbursements euro amount for a single spending row.
+// Reimbursements are attached by spending_id and reduce that row's
+// effective cost in its own period — same date, same category.
+const NET_EURO = sql<number>`COALESCE(SUM(${spending.euroMoney} - COALESCE((SELECT SUM(${spendingReimbursements.euroMoney}) FROM ${spendingReimbursements} WHERE ${spendingReimbursements.spendingId} = ${spending.id}), 0)), 0)`;
 
 export type SpendingInput = {
   transaction?: string | null;
@@ -164,7 +169,7 @@ export async function sumSpendingByMonth(year: number) {
   return db
     .select({
       mm: spending.mm,
-      total: sql<number>`COALESCE(SUM(${spending.euroMoney}), 0)`,
+      total: NET_EURO,
       count: sql<number>`COUNT(*)`,
     })
     .from(spending)
@@ -184,7 +189,7 @@ export async function sumSpendingByDueMonth(year: number) {
   return db
     .select({
       mm: sql<number>`CAST(strftime('%m', ${effective}) AS INTEGER)`,
-      total: sql<number>`COALESCE(SUM(${spending.euroMoney}), 0)`,
+      total: NET_EURO,
       count: sql<number>`COUNT(*)`,
     })
     .from(spending)
@@ -200,7 +205,7 @@ export async function sumSpendingByCategory(year: number, month?: number) {
   return db
     .select({
       categoryId: spending.categoryId,
-      total: sql<number>`COALESCE(SUM(${spending.euroMoney}), 0)`,
+      total: NET_EURO,
       count: sql<number>`COUNT(*)`,
     })
     .from(spending)

@@ -1,8 +1,16 @@
 import "server-only";
 import { and, asc, desc, eq, like, sql } from "drizzle-orm";
 import { db } from "@/db/client";
-import { budget, categories, spending } from "@/db/schema";
+import {
+  budget,
+  categories,
+  spending,
+  spendingReimbursements,
+} from "@/db/schema";
 import { requireAuth } from "@/lib/auth";
+
+// Net (euro_money - reimbursed) for the current spending row.
+const spendNetExpr = sql<number>`(${spending.euroMoney} - COALESCE((SELECT SUM(${spendingReimbursements.euroMoney}) FROM ${spendingReimbursements} WHERE ${spendingReimbursements.spendingId} = ${spending.id}), 0))`;
 
 export type BudgetVsSpendRow = {
   categoryId: string;
@@ -45,7 +53,7 @@ export async function getBudgetVsSpending(
     db
       .select({
         categoryId: spending.categoryId,
-        total: sql<number>`COALESCE(SUM(${spending.euroMoney}), 0)`,
+        total: sql<number>`COALESCE(SUM(${spendNetExpr}), 0)`,
       })
       .from(spending)
       .where(and(...spendConds))
@@ -122,7 +130,7 @@ export async function getCategoryDrillDown(
         transaction: spending.transaction,
         amount: spending.amount,
         currency: spending.currency,
-        euroMoney: spending.euroMoney,
+        euroMoney: spendNetExpr,
         chargeDate: spending.chargeDate,
       })
       .from(spending)
