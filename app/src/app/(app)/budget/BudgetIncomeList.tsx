@@ -1,9 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Copy, Pencil, Trash2, TrendingUp } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  Copy,
+  Pencil,
+  Trash2,
+  TrendingUp,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -26,13 +33,12 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { SortableHead } from "@/components/common/SortableHead";
 import { useCategories } from "@/hooks/use-categories";
 import { useCreateIncome, useDeleteIncome, useIncome } from "@/hooks/use-income";
-import { useSort } from "@/hooks/use-sort";
 import { formatMoney } from "@/lib/format";
 import type { Income } from "@/db/schema";
 
@@ -40,6 +46,40 @@ const ALL = "__all__";
 const MONTHS = [
   "Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec",
 ];
+
+type MonthNode = {
+  id: string;
+  label: string;
+  totalEur: number;
+  items: Income[];
+};
+
+function monthLabel(key: string) {
+  const [y, m] = key.split("-");
+  const i = Number(m) - 1;
+  return `${MONTHS[i] ?? m} ${y}`;
+}
+
+function buildTree(rows: Income[]): MonthNode[] {
+  const months = new Map<string, Income[]>();
+  for (const r of rows) {
+    const key = r.chargeDate.slice(0, 7);
+    if (!months.has(key)) months.set(key, []);
+    months.get(key)!.push(r);
+  }
+  const tree: MonthNode[] = [];
+  for (const [key, items] of months) {
+    items.sort((a, b) => a.chargeDate.localeCompare(b.chargeDate));
+    tree.push({
+      id: key,
+      label: monthLabel(key),
+      items,
+      totalEur: items.reduce((s, r) => s + (r.euroMoney ?? 0), 0),
+    });
+  }
+  tree.sort((a, b) => a.id.localeCompare(b.id));
+  return tree;
+}
 
 export function BudgetIncomeList() {
   const [year, setYear] = useState<number | undefined>(undefined);
@@ -54,6 +94,7 @@ export function BudgetIncomeList() {
   const create = useCreateIncome();
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
+  const [expandedMonths, setExpandedMonths] = useState<Set<string>>(new Set());
 
   const catById = useMemo(() => {
     const m = new Map<string, string>();
@@ -67,6 +108,31 @@ export function BudgetIncomeList() {
     for (let y = now - 3; y <= now + 1; y++) set.add(y);
     return Array.from(set).sort((a, b) => b - a);
   }, []);
+
+  const rows = data?.income ?? [];
+  const tree = useMemo(() => buildTree(rows), [rows]);
+  const grandTotal = useMemo(
+    () => tree.reduce((s, m) => s + m.totalEur, 0),
+    [tree],
+  );
+
+  const allExpanded =
+    tree.length > 0 && tree.every((m) => expandedMonths.has(m.id));
+
+  function toggleMonth(id: string) {
+    setExpandedMonths((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+  function expandAll() {
+    setExpandedMonths(new Set(tree.map((m) => m.id)));
+  }
+  function collapseAll() {
+    setExpandedMonths(new Set());
+  }
 
   async function confirmDelete() {
     if (!confirmId) return;
@@ -100,75 +166,66 @@ export function BudgetIncomeList() {
     }
   }
 
-  type K = "date" | "description" | "category" | "source" | "amount" | "eur";
-  const rows = data?.income ?? [];
-  const accessor = useCallback(
-    (r: Income, key: K): string | number =>
-      key === "date"
-        ? r.chargeDate
-        : key === "description"
-          ? r.description ?? ""
-          : key === "category"
-            ? (r.categoryId ? catById.get(r.categoryId) ?? "" : "")
-            : key === "source"
-              ? r.source ?? ""
-              : key === "amount"
-                ? r.amount
-                : (r.euroMoney ?? 0),
-    [catById],
-  );
-  const { sorted, sort, toggle } = useSort<Income, K>(rows, accessor);
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <Card className="p-4">
-        <div className="flex flex-wrap items-end gap-3">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-muted-foreground">Year</label>
-            <Select
-              value={year ? String(year) : ALL}
-              onValueChange={(v) =>
-                setYear(v === ALL ? undefined : Number(v))
-              }
-            >
-              <SelectTrigger className="w-[120px]"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ALL}>All</SelectItem>
-                {years.map((y) => (
-                  <SelectItem key={y} value={String(y)}>{y}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs text-muted-foreground">Year</label>
+              <Select
+                value={year ? String(year) : ALL}
+                onValueChange={(v) =>
+                  setYear(v === ALL ? undefined : Number(v))
+                }
+              >
+                <SelectTrigger className="w-[120px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ALL}>All</SelectItem>
+                  {years.map((y) => (
+                    <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs text-muted-foreground">Month</label>
+              <Select
+                value={month ? String(month) : ALL}
+                onValueChange={(v) =>
+                  setMonth(v === ALL ? undefined : Number(v))
+                }
+              >
+                <SelectTrigger className="w-[120px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ALL}>All</SelectItem>
+                  {MONTHS.map((m, i) => (
+                    <SelectItem key={i} value={String(i + 1)}>{m}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {(year || month) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setYear(undefined);
+                  setMonth(undefined);
+                }}
+              >
+                Clear
+              </Button>
+            )}
           </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-muted-foreground">Month</label>
-            <Select
-              value={month ? String(month) : ALL}
-              onValueChange={(v) =>
-                setMonth(v === ALL ? undefined : Number(v))
-              }
-            >
-              <SelectTrigger className="w-[120px]"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ALL}>All</SelectItem>
-                {MONTHS.map((m, i) => (
-                  <SelectItem key={i} value={String(i + 1)}>{m}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          {(year || month) && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setYear(undefined);
-                setMonth(undefined);
-              }}
-            >
-              Clear
-            </Button>
-          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={allExpanded ? collapseAll : expandAll}
+            disabled={tree.length === 0}
+          >
+            {allExpanded ? "Collapse all" : "Expand all"}
+          </Button>
         </div>
       </Card>
 
@@ -188,7 +245,7 @@ export function BudgetIncomeList() {
               {error instanceof Error ? error.message : "Unknown error"}
             </p>
           </div>
-        ) : rows.length === 0 ? (
+        ) : tree.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
             <TrendingUp className="size-10 text-muted-foreground/40" />
             <p className="text-sm font-medium">No planned income yet</p>
@@ -197,58 +254,44 @@ export function BudgetIncomeList() {
           <Table>
             <TableHeader>
               <TableRow>
-                <SortableHead label="Date" sortKey="date" sort={sort} onClick={toggle} className="w-[110px]" />
-                <SortableHead label="Description" sortKey="description" sort={sort} onClick={toggle} />
-                <SortableHead label="Category" sortKey="category" sort={sort} onClick={toggle} />
-                <SortableHead label="Source" sortKey="source" sort={sort} onClick={toggle} />
-                <SortableHead label="Amount" sortKey="amount" sort={sort} onClick={toggle} className="text-right" />
-                <SortableHead label="EUR" sortKey="eur" sort={sort} onClick={toggle} className="text-right" />
-                <SortableHead label="" sortKey={"date" as K} sort={null} onClick={() => {}} className="w-[140px]" />
+                <TableHead className="w-[32px]" />
+                <TableHead>Description</TableHead>
+                <TableHead className="w-[140px]">Category</TableHead>
+                <TableHead className="w-[140px]">Source</TableHead>
+                <TableHead className="w-[110px] text-right">Date</TableHead>
+                <TableHead className="w-[120px] text-right">Amount</TableHead>
+                <TableHead className="w-[120px] text-right">EUR</TableHead>
+                <TableHead className="w-[140px]" />
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sorted.map((r) => (
-                <TableRow key={r.id}>
-                  <TableCell className="text-muted-foreground">{r.chargeDate}</TableCell>
-                  <TableCell className="font-medium">{r.description ?? "—"}</TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {r.categoryId ? catById.get(r.categoryId) ?? "—" : "—"}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">{r.source ?? "—"}</TableCell>
-                  <TableCell className="text-right font-mono">
-                    {formatMoney(r.amount, r.currency)}
-                  </TableCell>
-                  <TableCell className="text-right font-mono">
-                    {formatMoney(r.euroMoney, "EUR")}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-1">
-                      <Button asChild variant="ghost" size="icon">
-                        <Link href={`/budget/income/${r.id}`} aria-label="Edit">
-                          <Pencil className="size-4" />
-                        </Link>
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => duplicate(r)}
-                        disabled={duplicatingId === r.id}
-                        aria-label="Duplicate"
-                      >
-                        <Copy className="size-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setConfirmId(r.id)}
-                        aria-label="Delete"
-                      >
-                        <Trash2 className="size-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+              <TableRow className="border-b-2 border-border bg-muted/30 font-semibold">
+                <TableCell />
+                <TableCell>Total</TableCell>
+                <TableCell />
+                <TableCell />
+                <TableCell />
+                <TableCell />
+                <TableCell className="text-right font-mono">
+                  {formatMoney(grandTotal, "EUR")}
+                </TableCell>
+                <TableCell />
+              </TableRow>
+              {tree.map((m) => {
+                const isOpen = expandedMonths.has(m.id);
+                return (
+                  <MonthRows
+                    key={m.id}
+                    month={m}
+                    isOpen={isOpen}
+                    catById={catById}
+                    onToggle={toggleMonth}
+                    onDelete={setConfirmId}
+                    onDuplicate={duplicate}
+                    duplicatingId={duplicatingId}
+                  />
+                );
+              })}
             </TableBody>
           </Table>
         )}
@@ -271,5 +314,97 @@ export function BudgetIncomeList() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+function MonthRows({
+  month,
+  isOpen,
+  catById,
+  onToggle,
+  onDelete,
+  onDuplicate,
+  duplicatingId,
+}: {
+  month: MonthNode;
+  isOpen: boolean;
+  catById: Map<string, string>;
+  onToggle: (id: string) => void;
+  onDelete: (id: string) => void;
+  onDuplicate: (r: Income) => void;
+  duplicatingId: string | null;
+}) {
+  return (
+    <>
+      <TableRow
+        className="cursor-pointer bg-muted/40 font-semibold hover:bg-muted/60"
+        onClick={() => onToggle(month.id)}
+      >
+        <TableCell className="w-[32px]">
+          {isOpen ? (
+            <ChevronDown className="size-4 text-muted-foreground" />
+          ) : (
+            <ChevronRight className="size-4 text-muted-foreground" />
+          )}
+        </TableCell>
+        <TableCell className="font-semibold uppercase tracking-wide">
+          {month.label}
+        </TableCell>
+        <TableCell />
+        <TableCell />
+        <TableCell />
+        <TableCell />
+        <TableCell className="text-right font-mono">
+          {formatMoney(month.totalEur, "EUR")}
+        </TableCell>
+        <TableCell />
+      </TableRow>
+      {isOpen &&
+        month.items.map((r) => (
+          <TableRow key={r.id} className="text-sm">
+            <TableCell className="w-[32px]" />
+            <TableCell className="pl-6">{r.description ?? "—"}</TableCell>
+            <TableCell className="text-muted-foreground">
+              {r.categoryId ? catById.get(r.categoryId) ?? "—" : "—"}
+            </TableCell>
+            <TableCell className="text-muted-foreground">{r.source ?? "—"}</TableCell>
+            <TableCell className="text-right font-mono text-muted-foreground">
+              {r.chargeDate}
+            </TableCell>
+            <TableCell className="text-right font-mono">
+              {formatMoney(r.amount, r.currency)}
+            </TableCell>
+            <TableCell className="text-right font-mono">
+              {formatMoney(r.euroMoney, "EUR")}
+            </TableCell>
+            <TableCell className="text-right">
+              <div className="flex justify-end gap-1">
+                <Button asChild variant="ghost" size="icon">
+                  <Link href={`/budget/income/${r.id}`} aria-label="Edit">
+                    <Pencil className="size-4" />
+                  </Link>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onDuplicate(r)}
+                  disabled={duplicatingId === r.id}
+                  aria-label="Duplicate"
+                >
+                  <Copy className="size-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onDelete(r.id)}
+                  aria-label="Delete"
+                >
+                  <Trash2 className="size-4" />
+                </Button>
+              </div>
+            </TableCell>
+          </TableRow>
+        ))}
+    </>
   );
 }

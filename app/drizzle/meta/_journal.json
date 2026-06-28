@@ -29,6 +29,41 @@
       "when": 1778154710542,
       "tag": "0003_budget_income",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1781096855458,
+      "tag": "0004_controllership",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1781102534107,
+      "tag": "0005_loans",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1781215327785,
+      "tag": "0006_company_investments",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1781257606640,
+      "tag": "0007_graph_positions",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1781378506433,
+      "tag": "0008_edge_waypoints",
+      "breakpoints": true
     }
   ]
 }
